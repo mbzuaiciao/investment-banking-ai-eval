@@ -1,0 +1,92 @@
+case_id: northstar-v1
+max_score: 100.0
+
+# Hard failure diagnostic codes — always reported even if aggregate score is high
+hard_failure_codes:
+  - SF_GUIDANCE_FABRICATED
+  - SF_MISSING_PROVENANCE
+  - REV_QUARTERLY_CONFUSION
+  - TV_NOT_DISCOUNTED
+  - EQ_BRIDGE_CASH_REVERSED
+  - EQ_BRIDGE_DEBT_OMITTED
+  - COMPS_NM_COERCED_ZERO
+  - WACC_PRETAX_DEBT
+  - CONSISTENCY_HEADLINE_DCF
+  - CONSISTENCY_HEADLINE_COMPS
+
+graders:
+  - name: source_fidelity
+    weight: 15.0
+    tolerances: {}
+    params: {}
+
+  - name: revenue_forecast
+    weight: 8.0
+    tolerances:
+      revenue_abs: 0.01
+    params: {}
+
+  - name: margin_forecast
+    weight: 7.0
+    tolerances:
+      margin_abs: 0.01
+    params: {}
+
+  - name: free_cash_flow
+    weight: 10.0
+    tolerances:
+      fcf_abs: 0.05
+    params: {}
+
+  - name: wacc
+    weight: 8.0
+    tolerances:
+      wacc_abs: 0.0001
+    params: {}
+
+  - name: terminal_value
+    weight: 7.0
+    tolerances:
+      tv_rel: 0.005
+    params: {}
+
+  - name: enterprise_value
+    weight: 5.0
+    tolerances:
+      ev_abs: 1.0
+    params: {}
+
+  - name: equity_bridge
+    weight: 10.0
+    tolerances:
+      equity_abs: 0.01
+    params: {}
+
+  - name: comps
+    weight: 10.0
+    tolerances: {}
+    params: {}
+
+  - name: consistency
+    weight: 20.0
+    tolerances: {}
+    params: {}
+
+# Error taxonomy reference (informational — not used programmatically here)
+error_taxonomy:
+  hard:
+    - arithmetic_error
+    - formula_error
+    - accounting_inconsistency
+    - valuation_error
+    - source_provenance_error
+  soft:
+    - unsupported_assumption
+    - cross_artifact_inconsistency
+
+# Judgment differences — not objectively wrong
+judgment_differences:
+  - revenue growth rate 7–9% for 2026E (management said "high single digits")
+  - EBITDA margin ±50bps from gold
+  - choice to normalize or not normalize 2025 restructuring charge
+  - inclusion/exclusion of Crestline Systems given FY mismatch

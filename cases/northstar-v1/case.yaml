@@ -1,0 +1,57 @@
+case_id: northstar-v1
+company: Northstar Components, Inc.
+industry: industrial components
+valuation_date: "2026-06-30"
+currency: USD
+units: millions (except per-share values)
+description: >
+  Synthetic investment-banking case for AI evaluation purposes.
+  Northstar is a fictional industrial-components manufacturer.
+  All financials are fabricated; any resemblance to real companies is coincidental.
+
+fiscal_year_end: December 31
+
+historical_years: [2023, 2024, 2025]
+forecast_years: [2026, 2027, 2028, 2029, 2030]
+
+source_documents:
+  - management_guidance.md
+  - quarterly_report.md
+  - income_statement.md
+  - capital_structure.md
+
+deliberate_traps:
+  - id: TRAP_QUARTERLY_YTD
+    description: >
+      Q2 standalone revenue ($281mm) and H1 YTD revenue ($535mm) are both
+      present in quarterly_report.md. Only annual revenue is the correct
+      basis for a full-year forecast.
+  - id: TRAP_EBITDA_DEFINITION
+    description: >
+      Management guidance refers to "adjusted EBITDA." Historical statements
+      report GAAP EBIT and D&A. The 2025 income statement also includes a
+      separately disclosed $9mm restructuring expense.
+  - id: TRAP_HIGH_SINGLE_DIGIT
+    description: >
+      Management states "high single digits" growth. This is qualitative.
+      Candidates must not claim management guided to exactly 8%.
+  - id: TRAP_RESTRUCTURING
+    description: >
+      2025 has a $9mm restructuring charge. Treatment (normalize or not)
+      must be explicitly stated.
+  - id: TRAP_CONVERTIBLE
+    description: >
+      $75mm of gross debt is convertible. Gold treatment is debt under base
+      case. Treatment must be explicit.
+  - id: TRAP_NM_PEER
+    description: >
+      Evergreen Controls has negative EBITDA and N/M multiples.
+      Must not be coerced to zero in median computation.
+  - id: TRAP_FY_MISMATCH
+    description: >
+      Crestline Systems has a different fiscal year end. Inclusion is
+      acceptable but must be disclosed.
+  - id: TRAP_CAPEX_TERMINOLOGY
+    description: >
+      Management guidance uses "capital investment"; the cash-flow statement
+      uses "purchases of property and equipment." They are the same concept.

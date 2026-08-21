@@ -1,0 +1,309 @@
+{
+  "case_id": "northstar-v1",
+  "analyst": "corrupted_c08",
+  "valuation_date": "2026-06-30",
+  "historical": [
+    {
+      "year": 2023,
+      "revenue": 820.0,
+      "ebitda": 131.2,
+      "ebitda_margin": 0.16,
+      "da": 32.8,
+      "ebit": 98.4,
+      "capex": 36.9,
+      "nwc": 98.4
+    },
+    {
+      "year": 2024,
+      "revenue": 905.0,
+      "ebitda": 149.3,
+      "ebitda_margin": 0.165,
+      "da": 36.2,
+      "ebit": 113.1,
+      "capex": 40.7,
+      "nwc": 108.6
+    },
+    {
+      "year": 2025,
+      "revenue": 1000.0,
+      "ebitda": 165.0,
+      "ebitda_margin": 0.165,
+      "da": 40.0,
+      "ebit": 125.0,
+      "capex": 45.0,
+      "nwc": 120.0
+    }
+  ],
+  "forecast": [
+    {
+      "year": 2026,
+      "revenue": 1080.0,
+      "revenue_growth": 0.08,
+      "ebitda_margin": 0.17,
+      "ebitda": 183.60000000000002,
+      "da": 43.2,
+      "ebit": 140.40000000000003,
+      "nopat": 105.30000000000003,
+      "capex": 97.2,
+      "nwc": 129.6,
+      "delta_nwc": 9.599999999999994,
+      "ufcf": 41.70000000000003,
+      "discount_factor": 0.9150537319551404,
+      "pv_ufcf": 38.15774062252938
+    },
+    {
+      "year": 2027,
+      "revenue": 1155.6000000000001,
+      "revenue_growth": 0.07,
+      "ebitda_margin": 0.175,
+      "ebitda": 202.23000000000002,
+      "da": 46.224000000000004,
+      "ebit": 156.00600000000003,
+      "nopat": 117.00450000000002,
+      "capex": 52.002,
+      "nwc": 138.672,
+      "delta_nwc": 9.072000000000003,
+      "ufcf": 102.15450000000001,
+      "discount_factor": 0.83732333236503,
+      "pv_ufcf": 85.53634635608347
+    },
+    {
+      "year": 2028,
+      "revenue": 1224.9360000000001,
+      "revenue_growth": 0.06,
+      "ebitda_margin": 0.18,
+      "ebitda": 220.48848,
+      "da": 48.997440000000005,
+      "ebit": 171.49104,
+      "nopat": 128.61828,
+      "capex": 55.12212,
+      "nwc": 146.99232,
+      "delta_nwc": 8.32032000000001,
+      "ufcf": 114.17328,
+      "discount_factor": 0.766195840133735,
+      "pv_ufcf": 87.47909219042417
+    },
+    {
+      "year": 2029,
+      "revenue": 1286.1828000000003,
+      "revenue_growth": 0.05,
+      "ebitda_margin": 0.1825,
+      "ebitda": 234.72836100000004,
+      "da": 51.44731200000001,
+      "ebit": 183.28104900000002,
+      "nopat": 137.46078675,
+      "capex": 57.87822600000001,
+      "nwc": 154.34193600000003,
+      "delta_nwc": 7.349616000000026,
+      "ufcf": 123.68025674999998,
+      "discount_factor": 0.7011103629228783,
+      "pv_ufcf": 86.71350969638726
+    },
+    {
+      "year": 2030,
+      "revenue": 1337.6301120000003,
+      "revenue_growth": 0.04,
+      "ebitda_margin": 0.185,
+      "ebitda": 247.46157072000005,
+      "da": 53.50520448000001,
+      "ebit": 193.95636624000005,
+      "nopat": 145.46727468000003,
+      "capex": 60.19335504000001,
+      "nwc": 160.51561344000004,
+      "delta_nwc": 6.173677440000006,
+      "ufcf": 132.60544668000003,
+      "discount_factor": 0.6415536541050026,
+      "pv_ufcf": 85.0735088717801
+    }
+  ],
+  "wacc_inputs": {
+    "risk_free_rate": 0.041,
+    "equity_risk_premium": 0.055,
+    "beta": 1.18,
+    "pre_tax_cost_of_debt": 0.062,
+    "tax_rate": 0.25,
+    "equity_weight": 0.78,
+    "debt_weight": 0.22
+  },
+  "wacc_outputs": {
+    "cost_of_equity": 0.1059,
+    "after_tax_cost_of_debt": 0.0465,
+    "wacc": 0.092832
+  },
+  "terminal_value_inputs": {
+    "terminal_growth_rate": 0.025,
+    "method": "perpetual_growth"
+  },
+  "terminal_value_outputs": {
+    "terminal_fcf": 135.92058284700002,
+    "terminal_value_at_horizon": 2003.7826224643238,
+    "pv_terminal_value": 1285.534063474092
+  },
+  "dcf_outputs": {
+    "sum_pv_ufcf": 427.4318091102242,
+    "pv_terminal_value": 1285.534063474092,
+    "enterprise_value": 1712.965872584316
+  },
+  "capital_structure": {
+    "gross_debt": 420.0,
+    "cash": 95.0,
+    "net_debt": 325.0,
+    "diluted_shares": 60.0,
+    "current_share_price": 20.0,
+    "convertible_face_value": 75.0,
+    "convertible_treatment": "debt",
+    "note_convertible": "Convertible notes ($75mm) treated as debt. Conversion price ($27.50) > current price ($20.00); conversion assumed out-of-the-money under base case."
+  },
+  "equity_bridge": {
+    "enterprise_value": 1712.965872584316,
+    "minus_net_debt": 325.0,
+    "equity_value": 1387.965872584316,
+    "diluted_shares": 60.0,
+    "implied_share_price": 23.132764543071932
+  },
+  "comps_inputs": {
+    "peers": [
+      {
+        "name": "Apex Motion",
+        "ltm_ev_ebitda": 8.4,
+        "ntm_ev_ebitda": 7.9,
+        "excluded": false,
+        "exclusion_reason": ""
+      },
+      {
+        "name": "Beacon Industrial",
+        "ltm_ev_ebitda": 9.1,
+        "ntm_ev_ebitda": 8.5,
+        "excluded": false,
+        "exclusion_reason": ""
+      },
+      {
+        "name": "Crestline Systems",
+        "ltm_ev_ebitda": 10.0,
+        "ntm_ev_ebitda": 9.2,
+        "excluded": false,
+        "exclusion_reason": "fiscal year ends Sep 30 \u2014 mismatch with calendar-year peers; included with disclosure"
+      },
+      {
+        "name": "Delta Precision",
+        "ltm_ev_ebitda": 7.8,
+        "ntm_ev_ebitda": 7.3,
+        "excluded": false,
+        "exclusion_reason": ""
+      },
+      {
+        "name": "Evergreen Controls",
+        "ltm_ev_ebitda": null,
+        "ntm_ev_ebitda": null,
+        "excluded": true,
+        "exclusion_reason": "negative EBITDA; N/M multiples"
+      }
+    ],
+    "applied_multiple": 8.2,
+    "applied_ebitda": 183.60000000000002
+  },
+  "comps_outputs": {
+    "ltm_median": 8.75,
+    "ntm_median": 8.2,
+    "enterprise_value": 1505.52,
+    "equity_value": 1180.52,
+    "implied_share_price": 19.675333333333334
+  },
+  "headline": {
+    "dcf_enterprise_value": 1712.965872584316,
+    "dcf_equity_value": 1387.965872584316,
+    "dcf_share_price": 23.132764543071932,
+    "comps_enterprise_value": 1505.52,
+    "comps_equity_value": 1180.52,
+    "comps_share_price": 19.675333333333334
+  },
+  "provenance": [
+    {
+      "metric": "revenue_growth",
+      "period": "2026E",
+      "value": 0.08,
+      "source": "management_guidance.md",
+      "classification": "analyst_assumption",
+      "confidence": 0.85,
+      "note": "Management guided to 'high single digits' (qualitative). Analyst interprets as 8.0%. Range 7\u20139% is defensible."
+    },
+    {
+      "metric": "ebitda_margin",
+      "period": "2026E",
+      "value": 0.17,
+      "source": "management_guidance.md",
+      "classification": "direct",
+      "confidence": 0.9,
+      "note": "Management guided to approximately 17% adjusted EBITDA margin."
+    },
+    {
+      "metric": "capex_pct",
+      "period": "2026E",
+      "value": 0.045,
+      "source": "management_guidance.md",
+      "classification": "direct",
+      "confidence": 0.9,
+      "note": "Management guided capital investment at ~4.5% of sales. 'Capital investment' = 'purchases of property and equipment' per cash flow statement."
+    },
+    {
+      "metric": "revenue",
+      "period": "2026E_source_selection",
+      "value": 1000.0,
+      "source": "income_statement.md",
+      "classification": "direct",
+      "confidence": 1.0,
+      "note": "FY2025 annual revenue $1,000mm used as base. Q2 revenue ($281mm) and H1 revenue ($535mm) from quarterly_report.md are NOT used as annual figures."
+    },
+    {
+      "metric": "gross_debt",
+      "period": "2026-06-30",
+      "value": 420.0,
+      "source": "capital_structure.md",
+      "classification": "direct",
+      "confidence": 1.0,
+      "note": "Total gross debt per Q2 balance sheet."
+    },
+    {
+      "metric": "convertible_treatment",
+      "period": "2026-06-30",
+      "value": 0.0,
+      "source": "capital_structure.md",
+      "classification": "analyst_assumption",
+      "confidence": 1.0,
+      "note": "$75mm convertible notes treated as DEBT. Conversion price $27.50 > current price $20.00 \u2192 out of money under base case."
+    },
+    {
+      "metric": "restructuring_treatment",
+      "period": "2025A",
+      "value": 0.0,
+      "source": "income_statement.md",
+      "classification": "analyst_assumption",
+      "confidence": 0.8,
+      "note": "$9mm 2025 restructuring charge: retained in GAAP EBITDA for historical comparability. Forward model does not include recurring restructuring. Treatment explicitly documented."
+    },
+    {
+      "metric": "evergreen_controls_multiple",
+      "period": "LTM/NTM",
+      "value": 0.0,
+      "source": "capital_structure.md",
+      "classification": "direct",
+      "confidence": 1.0,
+      "note": "Evergreen Controls has negative EBITDA \u2192 EV/EBITDA is N/M. Excluded from median. NOT assigned a zero multiple."
+    },
+    {
+      "metric": "crestline_fy_mismatch",
+      "period": "LTM/NTM",
+      "value": 0.0,
+      "source": "capital_structure.md",
+      "classification": "analyst_assumption",
+      "confidence": 0.75,
+      "note": "Crestline Systems has Sep 30 fiscal year end. Included in peer set with disclosure of FY mismatch."
+    }
+  ],
+  "notes": {
+    "restructuring_2025": "$9mm 2025 restructuring retained in historical GAAP figures; not normalized. Forward model does not include recurring restructuring.",
+    "convertible_treatment": "Convertible notes treated as debt under base case. See provenance record for rationale.",
+    "growth_assumption_2026E": "Management guided to 'high single digits' growth. Model assumes 8.0% as analyst interpretation. Management did not guide to exactly 8%.",
+    "corruption": "C08: 2026E capex double-counted (48.6 instead of 48.6... wait, capex = 2 \u00d7 4.5% \u00d7 revenue)."
+  }
+}
