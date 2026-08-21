@@ -9,6 +9,15 @@ investment-banking financial analysis tasks. Built around the fictional
 
 ---
 
+## Tutorial / Learning Guide
+
+New to the project? Start with the step-by-step learning lab:
+👉 **[docs/README.md](docs/README.md)**
+
+The tutorial covers both the core investment-banking concepts (DCF math, WACC derivation, trading comps, net debt bridges) and the AI-evaluation architecture (deterministic grading, diagnostic taxonomy, baseline experiments).
+
+---
+
 ## What this benchmark evaluates
 
 Investment banking analysis involves a chain of decisions: selecting source
@@ -238,13 +247,100 @@ investment-banking-ai-eval/
 
 ---
 
-## Current limitations (Milestone 0)
+---
 
-- No LLM or agent integration — graders evaluate structured JSON submissions only
-- Qualitative memo grading is out of scope
-- Only one case (Northstar v1)
-- No web UI or notebook interface
-- No RAG or document extraction pipeline
+## Milestone 1: Direct Analyst Baseline
+
+The **Direct Analyst Baseline** establishes an uncontrolled baseline for how reliably frontier models can complete the Northstar investment-banking case unaided.
+
+```text
+Northstar source packet
+        ↓
+single analyst prompt (sources + schema)
+        ↓
+one model completion
+        ↓
+submission parser
+        ↓
+deterministic Milestone 0 graders
+        ↓
+run artifacts + aggregate statistics
+```
+
+### Baseline Purity Principles
+
+1. **Single substantive call**: No critics, verifiers, reflection stages, or multi-turn loops.
+2. **Strict parse handling**: If the model output cannot be parsed into the submission schema, it is recorded as a real run failure (`parse_failure`) without automated repair prompts.
+3. **Zero benchmark leakage**: The prompt contains only the case background, source documents, and the output schema. It contains no ground-truth answers, diagnostic codes, tolerances, or scoring hints.
+4. **Repeated independent trials**: Because a single run is insufficient evidence of reliability, the experiment runner executes repeated trials to compute mean score, variance, hard-failure rates, and diagnostic code distributions.
+
+### Running the Baseline
+
+Set your provider API key:
+
+```bash
+export OPENAI_API_KEY="sk-..."
+```
+
+#### 1. Dry-run inspection (Cost guardrail)
+
+By default, running without `--execute` prints the experiment configuration without making paid calls:
+
+```bash
+uv run ib-eval baseline --case northstar-v1 --provider openai --model gpt-4o --runs 5
+```
+
+#### 2. Execute live trials
+
+Add `--execute` to run live trials:
+
+```bash
+uv run ib-eval baseline --case northstar-v1 --provider openai --model gpt-4o --runs 5 --execute
+```
+
+Optional parameters:
+- `--temperature <float>`: Sampling temperature (e.g. `0.2`)
+- `--seed <int>`: Random seed
+- `--output <dir>`: Custom output folder (default: `results/milestone-1`)
+
+### Experiment Artifacts
+
+Each experiment creates a self-contained directory:
+
+```text
+results/
+└── milestone-1/
+    └── m1-direct-openai-gpt-4o-20260821_120000/
+        ├── config.json
+        ├── prompt.txt
+        ├── run_001/
+        │   ├── raw_response.txt
+        │   ├── submission.json
+        │   ├── grade.json
+        │   └── metadata.json
+        ├── run_002/
+        │   ├── raw_response.txt
+        │   ├── parse_error.json
+        │   └── metadata.json
+        ├── summary.json
+        └── summary.md
+```
+
+`summary.json` and `summary.md` aggregate:
+- Completed calls, parsed runs, parse failure counts, and parse success rates;
+- Mean, median, min, max, and standard deviation of benchmark scores;
+- Hard-failure run counts and rates;
+- Full diagnostic code and failure category frequency distributions;
+- Grader-by-grader pass rates and mean scores.
+
+---
+
+## Current limitations
+
+- Milestone 1 tests single-call direct completions without verifiers or multi-agent loops.
+- Qualitative memo evaluation is out of scope.
+- Only one case (Northstar v1) is currently encoded.
+- No web UI or interactive dashboard.
 
 ---
 
