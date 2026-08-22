@@ -112,9 +112,9 @@ By building rigorous, deterministic evaluations like `investment-banking-ai-eval
 
 ---
 
-## Congratulations!
+## Next Steps
 
-You have completed the **Investment Banking AI Eval Learning Lab**.
+Continue to **[Chapter 07 — Milestone 2: Structured Analyst](07_structured_analyst.md)** to see how explicit workflow scaffolding dramatically improves baseline reliability before verifiers are introduced.
 
 - Return to **[Tutorial Index](README.md)**
 - Explore the **[Repository Codebase](../src/ib_eval/)**

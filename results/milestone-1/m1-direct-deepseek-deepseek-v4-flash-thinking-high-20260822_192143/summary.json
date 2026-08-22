@@ -1,0 +1,109 @@
+{
+  "experiment_id": "m1-direct-deepseek-deepseek-v4-flash-thinking-high-20260822_192143",
+  "case_id": "northstar-v1",
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "requested_runs": 10,
+  "completed_model_calls": 10,
+  "parsed_runs": 10,
+  "parse_failure_count": 0,
+  "parse_success_rate": 1.0,
+  "mean_score": 97.25,
+  "median_score": 97.5,
+  "min_score": 94.75,
+  "max_score": 98.25,
+  "standard_deviation": 1.2,
+  "hard_failure_run_count": 10,
+  "hard_failure_rate": 1.0,
+  "diagnostic_frequency": {
+    "TV_PV_ERROR": 10,
+    "FCF_NOPAT_ERROR": 5,
+    "TV_FORMULA_ERROR": 2
+  },
+  "failure_category_frequency": {
+    "arithmetic_error": 10,
+    "formula_error": 7
+  },
+  "grader_statistics": {
+    "source_fidelity": {
+      "grader_name": "source_fidelity",
+      "mean_score": 14.55,
+      "max_points": 15.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "revenue_forecast": {
+      "grader_name": "revenue_forecast",
+      "mean_score": 8.0,
+      "max_points": 8.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "margin_forecast": {
+      "grader_name": "margin_forecast",
+      "mean_score": 7.0,
+      "max_points": 7.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "free_cash_flow": {
+      "grader_name": "free_cash_flow",
+      "mean_score": 9.8,
+      "max_points": 10.0,
+      "pass_rate": 0.9,
+      "failure_count": 1,
+      "zero_score_count": 0
+    },
+    "wacc": {
+      "grader_name": "wacc",
+      "mean_score": 8.0,
+      "max_points": 8.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "terminal_value": {
+      "grader_name": "terminal_value",
+      "mean_score": 4.9,
+      "max_points": 7.0,
+      "pass_rate": 0.0,
+      "failure_count": 10,
+      "zero_score_count": 0
+    },
+    "enterprise_value": {
+      "grader_name": "enterprise_value",
+      "mean_score": 5.0,
+      "max_points": 5.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "equity_bridge": {
+      "grader_name": "equity_bridge",
+      "mean_score": 10.0,
+      "max_points": 10.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "comps": {
+      "grader_name": "comps",
+      "mean_score": 10.0,
+      "max_points": 10.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "consistency": {
+      "grader_name": "consistency",
+      "mean_score": 20.0,
+      "max_points": 20.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    }
+  }
+}

@@ -69,15 +69,27 @@ By running **10 to 20 repeated trials**, Milestone 1 generates statistically mea
 ## 4. Running the Baseline Experiment
 
 ### Prerequisites & API Configuration
-Set your OpenAI API key as an environment variable:
+Set your provider API key as an environment variable:
+
 ```bash
+# For OpenAI
 export OPENAI_API_KEY="sk-..."
+
+# For DeepSeek
+export DEEPSEEK_API_KEY="sk-..."
 ```
 
 ### Cost Guardrail (Dry-Run Mode)
 To prevent accidental paid API calls, running without the `--execute` flag performs a dry-run:
 ```bash
+# OpenAI dry run
 uv run ib-eval baseline --case northstar-v1 --provider openai --model <model-name> --runs 5
+
+# DeepSeek V4 Flash (thinking disabled)
+uv run ib-eval baseline --case northstar-v1 --provider deepseek --model deepseek-v4-flash --thinking off --runs 3
+
+# DeepSeek V4 Flash (thinking enabled with high reasoning effort)
+uv run ib-eval baseline --case northstar-v1 --provider deepseek --model deepseek-v4-flash --thinking on --reasoning-effort high --runs 3
 ```
 
 Output:
@@ -86,30 +98,86 @@ Output:
   IB-Eval — Milestone 1: Direct Analyst Baseline  
 ==================================================
   Case:        northstar-v1 (Northstar Components, Inc.)
-  Provider:    openai
-  Model:       <model-name>
-  Trials:      5
+  Provider:    deepseek
+  Model:       deepseek-v4-flash
+  Trials:      3
   Output Dir:  results/milestone-1
+  Thinking:    on
+  Reasoning:   high
 --------------------------------------------------
 
   [DRY-RUN / GUARDRAIL ACTIVE]
   Live provider calls were NOT executed.
   To execute live trials, re-run with the --execute flag:
 
-    uv run ib-eval baseline --case northstar-v1 --provider openai --model <model-name> --runs 5 --output results/milestone-1 --execute
+    uv run ib-eval baseline --case northstar-v1 --provider deepseek --model deepseek-v4-flash --thinking on --reasoning-effort high --runs 3 --execute
 ```
+
+> **Note on Output Directories**: In direct mode (`--mode direct`), artifacts default to `results/milestone-1/`. An explicitly provided `--output <path>` overrides this default.
 
 ### Executing Live Trials
 When ready, add the `--execute` flag:
+
 ```bash
+# OpenAI live run (defaults to results/milestone-1)
 uv run ib-eval baseline \
   --case northstar-v1 \
   --provider openai \
   --model <model-name> \
   --runs 5 \
-  --output results/milestone-1 \
+  --execute
+
+# DeepSeek V4 Flash (cheap direct baseline, thinking off)
+uv run ib-eval baseline \
+  --case northstar-v1 \
+  --provider deepseek \
+  --model deepseek-v4-flash \
+  --thinking off \
+  --runs 3 \
+  --execute
+
+# DeepSeek V4 Flash (thinking on)
+uv run ib-eval baseline \
+  --case northstar-v1 \
+  --provider deepseek \
+  --model deepseek-v4-flash \
+  --thinking on \
+  --reasoning-effort high \
+  --runs 3 \
+  --execute
+
+# DeepSeek V4 Pro (stronger comparison model, custom output directory)
+uv run ib-eval baseline \
+  --case northstar-v1 \
+  --provider deepseek \
+  --model deepseek-v4-pro \
+  --thinking on \
+  --reasoning-effort high \
+  --runs 3 \
+  --output results/custom-pro-experiment \
   --execute
 ```
+
+---
+
+### The DeepSeek V4 Experimental Ladder
+
+DeepSeek V4 models allow researchers to systematically isolate the impact of explicit reasoning and model scaling on valuation accuracy:
+
+```text
+DeepSeek V4 Flash (thinking off)
+              ↓
+DeepSeek V4 Flash (thinking on, high reasoning effort)
+              ↓
+DeepSeek V4 Pro (thinking on, high reasoning effort)
+              ↓
+Later milestones: structured workflows & independent verifier agents
+```
+
+#### Why this experimental ladder matters:
+1. **Thinking off vs. Thinking on (same model)**: Isolates whether additional reasoning time improves financial arithmetic and eliminates accounting errors.
+2. **Flash vs. Pro (same reasoning mode)**: Tests how model capability scaling impacts nuanced financial judgment calls (such as N/M peer multiple handling and guidance provenance).
+3. **Model capability vs. System architecture**: Compares whether pure model reasoning can substitute for structured extraction and verifier loops (Milestones 2–5).
 
 ---
 

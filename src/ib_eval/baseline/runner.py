@@ -20,7 +20,7 @@ from ib_eval.baseline.interface import (
     TrialMetadata,
     TrialResult,
 )
-from ib_eval.baseline.prompt import build_analyst_prompt
+from ib_eval.baseline.prompt import build_analyst_prompt, build_structured_analyst_prompt
 from ib_eval.case import NorthstarCase
 from ib_eval.schemas import Submission
 from ib_eval.scoring import grade_submission
@@ -95,48 +95,76 @@ class DirectAnalyst:
         trial_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now(UTC).isoformat()
 
-        # 1. Model completion
-        completion = self.provider.complete(prompt)
+        # 1. Model completion (with provider error handling)
+        try:
+            completion = self.provider.complete(prompt)
+            raw_text = completion.raw_response
+            latency = completion.latency_seconds
+            usage = completion.usage
+            provider_error: str | None = None
+        except Exception as exc:
+            raw_text = ""
+            latency = None
+            usage = None
+            provider_error = str(exc)
 
         # 2. Always preserve raw response
         raw_file = trial_dir / "raw_response.txt"
-        raw_file.write_text(completion.raw_response)
+        raw_file.write_text(raw_text)
 
-        # 3. Parse submission
-        submission, parse_error = parse_submission_response(completion.raw_response)
-
+        # 3. Parse submission or record provider error
         score: float | None = None
         hard_failure_codes: list[str] = []
         grade_report = None
+        submission = None
+        parse_error: str | None = None
 
-        if submission is not None:
-            (trial_dir / "submission.json").write_text(
-                json.dumps(submission.model_dump(), indent=2)
-            )
-            grade_report = grade_submission(submission, case)
-            (trial_dir / "grade.json").write_text(
-                json.dumps(grade_report.model_dump(), indent=2)
-            )
-            score = grade_report.total_score
-            hard_failure_codes = [f.diagnostic_code for f in grade_report.hard_failures]
-        else:
-            parse_payload = {
-                "status": "parse_failure",
-                "error": parse_error or "Unknown parse error",
-                "raw_response_preserved": True,
+        if provider_error is not None:
+            provider_payload = {
+                "status": "provider_error",
+                "error": provider_error,
+                "provider": config.provider,
+                "model": config.model,
             }
-            (trial_dir / "parse_error.json").write_text(json.dumps(parse_payload, indent=2))
+            (trial_dir / "provider_error.json").write_text(
+                json.dumps(provider_payload, indent=2)
+            )
+            parse_error = f"Provider error: {provider_error}"
+        else:
+            submission, parse_error = parse_submission_response(raw_text)
+            if submission is not None:
+                (trial_dir / "submission.json").write_text(
+                    json.dumps(submission.model_dump(), indent=2)
+                )
+                grade_report = grade_submission(submission, case)
+                (trial_dir / "grade.json").write_text(
+                    json.dumps(grade_report.model_dump(), indent=2)
+                )
+                score = grade_report.total_score
+                hard_failure_codes = [f.diagnostic_code for f in grade_report.hard_failures]
+            else:
+                parse_payload = {
+                    "status": "parse_failure",
+                    "error": parse_error or "Unknown parse error",
+                    "raw_response_preserved": True,
+                }
+                (trial_dir / "parse_error.json").write_text(
+                    json.dumps(parse_payload, indent=2)
+                )
 
         # 4. Save metadata
         metadata = TrialMetadata(
             run_index=run_index,
             provider=config.provider,
             model=config.model,
+            mode=config.mode,
             timestamp=timestamp,
             temperature=config.temperature,
             seed=config.seed,
-            latency_seconds=completion.latency_seconds,
-            token_usage=completion.usage,
+            thinking=config.thinking,
+            reasoning_effort=config.reasoning_effort,
+            latency_seconds=latency,
+            token_usage=usage,
             parsed_successfully=submission is not None,
             score=score,
             hard_failure_count=len(hard_failure_codes),
@@ -150,7 +178,7 @@ class DirectAnalyst:
 
         return TrialResult(
             metadata=metadata,
-            raw_response=completion.raw_response,
+            raw_response=raw_text,
             submission=submission,
             parse_error=parse_error,
             grade=grade_report,
@@ -185,24 +213,46 @@ def run_baseline_experiment(
     timestamp_slug = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     sanitized_provider = sanitize_name(config.provider)
     sanitized_model = sanitize_name(config.model)
-    exp_id = f"m1-direct-{sanitized_provider}-{sanitized_model}-{timestamp_slug}"
+    sanitized_mode = sanitize_name(config.mode)
+
+    condition_suffix = ""
+    if config.thinking is not None:
+        if config.thinking:
+            if config.reasoning_effort:
+                condition_suffix = f"-thinking-{config.reasoning_effort.lower()}"
+            else:
+                condition_suffix = "-thinking-on"
+        else:
+            condition_suffix = "-thinking-off"
+
+    milestone_prefix = "m2" if config.mode == "structured" else "m1"
+    exp_id = (
+        f"{milestone_prefix}-{sanitized_mode}-{sanitized_provider}-"
+        f"{sanitized_model}{condition_suffix}-{timestamp_slug}"
+    )
 
     exp_dir = output_dir / exp_id
     exp_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Build and save prompt
-    prompt = build_analyst_prompt(case)
+    # 1. Build and save prompt based on mode
+    if config.mode == "structured":
+        prompt = build_structured_analyst_prompt(case)
+    else:
+        prompt = build_analyst_prompt(case)
     (exp_dir / "prompt.txt").write_text(prompt)
 
     # 2. Save experiment configuration
     config_dict = {
         "experiment_id": exp_id,
         "case_id": case.meta.case_id,
+        "mode": config.mode,
         "provider": config.provider,
         "model": config.model,
         "runs": runs,
         "temperature": config.temperature,
         "seed": config.seed,
+        "thinking": config.thinking,
+        "reasoning_effort": config.reasoning_effort,
         "timestamp": datetime.now(UTC).isoformat(),
         "git_commit": get_git_commit(),
     }
@@ -229,6 +279,7 @@ def run_baseline_experiment(
         case_id=case.meta.case_id,
         provider=config.provider,
         model=config.model,
+        mode=config.mode,
         requested_runs=runs,
         trial_results=trial_results,
     )

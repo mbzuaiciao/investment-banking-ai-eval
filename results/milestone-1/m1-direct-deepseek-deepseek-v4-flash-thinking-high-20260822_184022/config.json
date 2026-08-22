@@ -1,0 +1,13 @@
+{
+  "experiment_id": "m1-direct-deepseek-deepseek-v4-flash-thinking-high-20260822_184022",
+  "case_id": "northstar-v1",
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "runs": 3,
+  "temperature": null,
+  "seed": null,
+  "thinking": true,
+  "reasoning_effort": "high",
+  "timestamp": "2026-08-22T18:40:22.616598+00:00",
+  "git_commit": "10eb43fcccca2289c2667dcff1cb6125c5e9b64e"
+}

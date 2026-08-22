@@ -31,9 +31,12 @@ class ProviderConfig:
 
     provider: str
     model: str
+    mode: str = "direct"
     temperature: float | None = None
     seed: int | None = None
     timeout_seconds: float = 180.0
+    thinking: bool | None = None
+    reasoning_effort: str | None = None
     extra_params: dict[str, Any] = field(default_factory=dict[str, Any])
 
 
@@ -45,8 +48,11 @@ class TrialMetadata:
     provider: str
     model: str
     timestamp: str
+    mode: str = "direct"
     temperature: float | None = None
     seed: int | None = None
+    thinking: bool | None = None
+    reasoning_effort: str | None = None
     latency_seconds: float | None = None
     token_usage: dict[str, int] | None = None
     parsed_successfully: bool = False

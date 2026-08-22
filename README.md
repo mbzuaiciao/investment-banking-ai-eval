@@ -279,7 +279,11 @@ run artifacts + aggregate statistics
 Set your provider API key:
 
 ```bash
+# For OpenAI
 export OPENAI_API_KEY="sk-..."
+
+# For DeepSeek
+export DEEPSEEK_API_KEY="sk-..."
 ```
 
 #### 1. Dry-run inspection (Cost guardrail)
@@ -287,7 +291,14 @@ export OPENAI_API_KEY="sk-..."
 By default, running without `--execute` prints the experiment configuration without making paid calls:
 
 ```bash
+# OpenAI dry run
 uv run ib-eval baseline --case northstar-v1 --provider openai --model <model-name> --runs 5
+
+# DeepSeek V4 Flash (thinking disabled)
+uv run ib-eval baseline --case northstar-v1 --provider deepseek --model deepseek-v4-flash --thinking off --runs 3
+
+# DeepSeek V4 Flash (thinking enabled with high reasoning effort)
+uv run ib-eval baseline --case northstar-v1 --provider deepseek --model deepseek-v4-flash --thinking on --reasoning-effort high --runs 3
 ```
 
 #### 2. Execute live trials
@@ -295,13 +306,26 @@ uv run ib-eval baseline --case northstar-v1 --provider openai --model <model-nam
 Add `--execute` to run live trials:
 
 ```bash
+# OpenAI live run
 uv run ib-eval baseline --case northstar-v1 --provider openai --model <model-name> --runs 5 --execute
+
+# DeepSeek V4 Flash (cheap direct baseline, thinking off)
+uv run ib-eval baseline --case northstar-v1 --provider deepseek --model deepseek-v4-flash --thinking off --runs 3 --execute
+
+# DeepSeek V4 Flash (thinking on)
+uv run ib-eval baseline --case northstar-v1 --provider deepseek --model deepseek-v4-flash --thinking on --reasoning-effort high --runs 3 --execute
+
+# DeepSeek V4 Pro (stronger comparison model)
+uv run ib-eval baseline --case northstar-v1 --provider deepseek --model deepseek-v4-pro --thinking on --reasoning-effort high --runs 3 --execute
 ```
 
 Optional parameters:
+- `--mode [direct|structured]`: Experiment mode (`direct` for Milestone 1, `structured` for Milestone 2)
+- `--thinking [on|off]`: Enable or disable thinking / reasoning mode
+- `--reasoning-effort [low|medium|high]`: Level of reasoning effort when thinking is enabled
 - `--temperature <float>`: Sampling temperature (e.g. `0.2`)
 - `--seed <int>`: Random seed
-- `--output <dir>`: Custom output folder (default: `results/milestone-1`)
+- `--output <dir>`: Custom output folder (defaults to `results/milestone-1` for direct, `results/milestone-2` for structured; explicit `--output` overrides either default)
 
 ### Experiment Artifacts
 
@@ -330,14 +354,75 @@ results/
 - Completed calls, parsed runs, parse failure counts, and parse success rates;
 - Mean, median, min, max, and standard deviation of benchmark scores;
 - Hard-failure run counts and rates;
-- Full diagnostic code and failure category frequency distributions;
+- Raw diagnostic occurrence counts and run-level incidence percentages (strictly bounded in [0%, 100%]);
 - Grader-by-grader pass rates and mean scores.
+
+---
+
+## Milestone 2: Structured Analyst
+
+The **Structured Analyst** tests the hypothesis:
+> *Does imposing an explicit, stage-by-stage financial analysis workflow reduce critical errors relative to the direct baseline under an identical single-call constraint?*
+
+```text
+Northstar source packet
+        ↓
+8-stage financial reasoning workflow
+  (Extraction → Assumptions → Forecasts → WACC → TV → Bridge → Comps → Invariant Checks)
+        ↓
+one model completion
+        ↓
+submission parser
+        ↓
+deterministic graders
+```
+
+### Running the Structured Analyst
+
+Use `--mode structured` with the `baseline` command:
+
+```bash
+# DeepSeek V4 Flash 3-run smoke test (Structured mode)
+uv run ib-eval baseline \
+  --case northstar-v1 \
+  --provider deepseek \
+  --model deepseek-v4-flash \
+  --mode structured \
+  --thinking on \
+  --reasoning-effort high \
+  --runs 3 \
+  --execute
+
+# DeepSeek V4 Flash 10-run structured experiment
+uv run ib-eval baseline \
+  --case northstar-v1 \
+  --provider deepseek \
+  --model deepseek-v4-flash \
+  --mode structured \
+  --thinking on \
+  --reasoning-effort high \
+  --runs 10 \
+  --output results/milestone-2 \
+  --execute
+```
+
+### Comparing Direct vs. Structured Baselines
+
+Use the built-in `compare` command to generate a side-by-side comparative analysis between any two experiment summaries:
+
+```bash
+uv run ib-eval compare \
+  results/milestone-1/m1-direct-deepseek-deepseek_v4_flash-thinking-high-... \
+  results/milestone-2/m2-structured-deepseek-deepseek_v4_flash-thinking-high-...
+```
+
+The report highlights deltas in mean/median scores, standard deviation, parse rates, hard-failure rates, grader pass rates, and individual diagnostic run incidence.
 
 ---
 
 ## Current limitations
 
-- Milestone 1 tests single-call direct completions without verifiers or multi-agent loops.
+- Milestone 1 and Milestone 2 test single-call completions without external tool execution or iterative multi-agent verifiers.
 - Qualitative memo evaluation is out of scope.
 - Only one case (Northstar v1) is currently encoded.
 - No web UI or interactive dashboard.
@@ -346,11 +431,12 @@ results/
 
 ## Future roadmap
 
-- **Milestone 1**: Agent harness — plug in an LLM agent and evaluate its structured output
-- **Milestone 2**: Document extraction — evaluate source-reading accuracy from raw documents
-- **Milestone 3**: Additional cases — more companies, industries, and deal types
-- **Milestone 4**: Qualitative grading — evaluate memo writing and reasoning chains
-- **Milestone 5**: Leaderboard — compare models and agents systematically
+- **Milestone 0**: Deterministic benchmark & grader foundation (Completed)
+- **Milestone 1**: Direct analyst baseline (Completed)
+- **Milestone 2**: Structured analyst workflow (Completed)
+- **Milestone 3**: Tool-augmented modeling & Python sandbox verification
+- **Milestone 4**: Multi-agent verifier loops & iterative repair
+- **Milestone 5**: Real-world 10-K extraction & Excel workbook generation
 
 ---
 

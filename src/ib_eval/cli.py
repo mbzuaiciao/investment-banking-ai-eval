@@ -131,12 +131,18 @@ def grade(
 @click.option(
     "--provider",
     default="openai",
-    help="Provider name: openai, mock (default: openai)",
+    help="Provider name: openai, deepseek, mock (default: openai)",
 )
 @click.option(
     "--model",
     default="gpt-4o",
     help="Model name identifier (default: gpt-4o)",
+)
+@click.option(
+    "--mode",
+    type=click.Choice(["direct", "structured"], case_sensitive=False),
+    default="direct",
+    help="Experiment mode: direct (M1) or structured (M2) (default: direct)",
 )
 @click.option(
     "--runs",
@@ -147,8 +153,11 @@ def grade(
 @click.option(
     "--output",
     "output_dir",
-    default="results/milestone-1",
-    help="Output directory for artifacts",
+    default=None,
+    help=(
+        "Output directory for artifacts "
+        "(default: results/milestone-1 for direct, results/milestone-2 for structured)"
+    ),
 )
 @click.option(
     "--temperature",
@@ -163,6 +172,18 @@ def grade(
     help="Random seed for provider calls",
 )
 @click.option(
+    "--thinking",
+    type=click.Choice(["on", "off", "true", "false"], case_sensitive=False),
+    default=None,
+    help="Enable or disable thinking / reasoning mode (on, off)",
+)
+@click.option(
+    "--reasoning-effort",
+    type=click.Choice(["low", "medium", "high"], case_sensitive=False),
+    default=None,
+    help="Reasoning effort level for thinking mode (low, medium, high)",
+)
+@click.option(
     "--execute",
     is_flag=True,
     default=False,
@@ -173,15 +194,18 @@ def baseline(
     case_dir: str | None,
     provider: str,
     model: str,
+    mode: str,
     runs: int,
-    output_dir: str,
+    output_dir: str | None,
     temperature: float | None,
     seed: int | None,
+    thinking: str | None,
+    reasoning_effort: str | None,
     execute: bool,
 ) -> None:
-    """Run the Milestone 1 Direct Analyst Baseline experiment."""
+    """Run the Direct (M1) or Structured (M2) Analyst Baseline experiment."""
     from ib_eval.baseline.interface import ProviderConfig
-    from ib_eval.baseline.providers import MockAnalyst, OpenAIAnalyst
+    from ib_eval.baseline.providers import DeepSeekAnalyst, MockAnalyst, OpenAIAnalyst
     from ib_eval.baseline.runner import run_baseline_experiment
 
     # Resolve case
@@ -190,20 +214,48 @@ def baseline(
         raise click.ClickException(f"Case directory not found: {case_path}")
 
     case_obj = load_case(case_path)
-    out_path = Path(output_dir)
+    mode_normalized = mode.lower()
+
+    # Resolve output directory based on mode if not explicitly provided
+    if output_dir is not None:
+        out_path = Path(output_dir)
+    elif mode_normalized == "structured":
+        out_path = Path("results/milestone-2")
+    else:
+        out_path = Path("results/milestone-1")
+
+    thinking_bool: bool | None = None
+    if thinking is not None:
+        thinking_bool = thinking.lower() in ("on", "true")
+
+    if reasoning_effort is not None:
+        reasoning_effort = reasoning_effort.lower()
+        if thinking_bool is False:
+            raise click.ClickException(
+                "Cannot specify --reasoning-effort when --thinking is set to 'off'."
+            )
 
     config = ProviderConfig(
         provider=provider,
         model=model,
+        mode=mode_normalized,
         temperature=temperature,
         seed=seed,
+        thinking=thinking_bool,
+        reasoning_effort=reasoning_effort,
     )
 
     # Cost / Confirmation guardrail
+    milestone_label = (
+        "Milestone 2: Structured Analyst"
+        if mode_normalized == "structured"
+        else "Milestone 1: Direct Analyst Baseline"
+    )
     click.echo("==================================================")
-    click.echo("  IB-Eval — Milestone 1: Direct Analyst Baseline  ")
+    click.echo(f"  IB-Eval — {milestone_label}")
     click.echo("==================================================")
     click.echo(f"  Case:        {case_obj.meta.case_id} ({case_obj.meta.company})")
+    click.echo(f"  Mode:        {mode_normalized}")
     click.echo(f"  Provider:    {provider}")
     click.echo(f"  Model:       {model}")
     click.echo(f"  Trials:      {runs}")
@@ -212,6 +264,10 @@ def baseline(
         click.echo(f"  Temperature: {temperature}")
     if seed is not None:
         click.echo(f"  Seed:        {seed}")
+    if thinking_bool is not None:
+        click.echo(f"  Thinking:    {'on' if thinking_bool else 'off'}")
+    if reasoning_effort is not None:
+        click.echo(f"  Reasoning:   {reasoning_effort}")
     click.echo("--------------------------------------------------")
 
     if not execute:
@@ -220,9 +276,19 @@ def baseline(
         click.echo("  Live provider calls were NOT executed.")
         click.echo("  To execute live trials, re-run with the --execute flag:")
         click.echo()
+        flags: list[str] = []
+        if mode_normalized != "direct":
+            flags.append(f"--mode {mode_normalized}")
+        if thinking is not None:
+            flags.append(f"--thinking {thinking.lower()}")
+        if reasoning_effort is not None:
+            flags.append(f"--reasoning-effort {reasoning_effort.lower()}")
+        if output_dir is not None:
+            flags.append(f"--output {output_dir}")
+        extra_flags = f" {' '.join(flags)}" if flags else ""
         click.echo(
             f"    uv run ib-eval baseline --case {case_id} --provider {provider} "
-            f"--model {model} --runs {runs} --output {output_dir} --execute"
+            f"--model {model}{extra_flags} --runs {runs} --execute"
         )
         click.echo()
         return
@@ -233,11 +299,18 @@ def baseline(
             analyst = OpenAIAnalyst(config=config)
         except Exception as exc:
             raise click.ClickException(str(exc)) from exc
+    elif provider == "deepseek":
+        try:
+            analyst = DeepSeekAnalyst(config=config)
+        except Exception as exc:
+            raise click.ClickException(str(exc)) from exc
     elif provider == "mock":
         # Uses empty mock response by default if not configured
         analyst = MockAnalyst()
     else:
-        raise click.ClickException(f"Unsupported provider: {provider}. Supported: openai, mock")
+        raise click.ClickException(
+            f"Unsupported provider: {provider}. Supported: openai, deepseek, mock"
+        )
 
     click.echo(f"  Running {runs} trial(s)...")
     res = run_baseline_experiment(
@@ -261,4 +334,37 @@ def baseline(
     click.echo(f"  Hard Failures: {res.summary.hard_failure_run_count} run(s)")
     click.echo(f"  Artifacts saved to: {res.experiment_dir}")
     click.echo("==================================================")
+
+
+@main.command()
+@click.argument("exp_dir_a", type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.argument("exp_dir_b", type=click.Path(exists=True, file_okay=False, path_type=Path))
+def compare(exp_dir_a: Path, exp_dir_b: Path) -> None:
+    """Compare two experiment runs side-by-side."""
+    import json
+
+    from ib_eval.baseline.analysis import ExperimentSummary, compare_experiments
+
+    sum_file_a = exp_dir_a / "summary.json"
+    sum_file_b = exp_dir_b / "summary.json"
+
+    if not sum_file_a.exists():
+        raise click.ClickException(f"summary.json not found in: {exp_dir_a}")
+    if not sum_file_b.exists():
+        raise click.ClickException(f"summary.json not found in: {exp_dir_b}")
+
+    try:
+        data_a = json.loads(sum_file_a.read_text())
+        summary_a = ExperimentSummary.model_validate(data_a)
+    except Exception as exc:
+        raise click.ClickException(f"Failed to parse {sum_file_a}: {exc}") from exc
+
+    try:
+        data_b = json.loads(sum_file_b.read_text())
+        summary_b = ExperimentSummary.model_validate(data_b)
+    except Exception as exc:
+        raise click.ClickException(f"Failed to parse {sum_file_b}: {exc}") from exc
+
+    report = compare_experiments(summary_a, summary_b)
+    click.echo(report)
 

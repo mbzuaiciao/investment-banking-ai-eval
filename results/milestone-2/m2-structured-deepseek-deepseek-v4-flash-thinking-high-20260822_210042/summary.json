@@ -1,0 +1,129 @@
+{
+  "experiment_id": "m2-structured-deepseek-deepseek-v4-flash-thinking-high-20260822_210042",
+  "case_id": "northstar-v1",
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "mode": "structured",
+  "requested_runs": 10,
+  "completed_model_calls": 10,
+  "parsed_runs": 10,
+  "parse_failure_count": 0,
+  "parse_success_rate": 1.0,
+  "mean_score": 98.95,
+  "median_score": 99.25,
+  "min_score": 97.0,
+  "max_score": 100.0,
+  "standard_deviation": 1.17,
+  "hard_failure_run_count": 3,
+  "hard_failure_rate": 0.3,
+  "diagnostic_frequency": {
+    "FCF_NOPAT_ERROR": 10,
+    "COMPS_MEDIAN_ERROR": 1
+  },
+  "diagnostic_incidence": {
+    "FCF_NOPAT_ERROR": 2,
+    "COMPS_MEDIAN_ERROR": 1
+  },
+  "diagnostic_stats": {
+    "FCF_NOPAT_ERROR": {
+      "diagnostic_code": "FCF_NOPAT_ERROR",
+      "description": "NOPAT formula error",
+      "occurrence_count": 10,
+      "run_count": 2,
+      "run_incidence_rate": 0.2
+    },
+    "COMPS_MEDIAN_ERROR": {
+      "diagnostic_code": "COMPS_MEDIAN_ERROR",
+      "description": "Comps median calculated incorrectly",
+      "occurrence_count": 1,
+      "run_count": 1,
+      "run_incidence_rate": 0.1
+    }
+  },
+  "failure_category_frequency": {
+    "formula_error": 10,
+    "arithmetic_error": 1
+  },
+  "grader_statistics": {
+    "source_fidelity": {
+      "grader_name": "source_fidelity",
+      "mean_score": 14.55,
+      "max_points": 15.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "revenue_forecast": {
+      "grader_name": "revenue_forecast",
+      "mean_score": 8.0,
+      "max_points": 8.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "margin_forecast": {
+      "grader_name": "margin_forecast",
+      "mean_score": 7.0,
+      "max_points": 7.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "free_cash_flow": {
+      "grader_name": "free_cash_flow",
+      "mean_score": 9.6,
+      "max_points": 10.0,
+      "pass_rate": 0.8,
+      "failure_count": 2,
+      "zero_score_count": 0
+    },
+    "wacc": {
+      "grader_name": "wacc",
+      "mean_score": 8.0,
+      "max_points": 8.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "terminal_value": {
+      "grader_name": "terminal_value",
+      "mean_score": 7.0,
+      "max_points": 7.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "enterprise_value": {
+      "grader_name": "enterprise_value",
+      "mean_score": 5.0,
+      "max_points": 5.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "equity_bridge": {
+      "grader_name": "equity_bridge",
+      "mean_score": 10.0,
+      "max_points": 10.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "comps": {
+      "grader_name": "comps",
+      "mean_score": 9.8,
+      "max_points": 10.0,
+      "pass_rate": 0.9,
+      "failure_count": 1,
+      "zero_score_count": 0
+    },
+    "consistency": {
+      "grader_name": "consistency",
+      "mean_score": 20.0,
+      "max_points": 20.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    }
+  }
+}
