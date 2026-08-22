@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.pyright/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+
+# macOS
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+
+# Local API credentials / secrets
+*.pem
+*.key
+secrets/
+credentials/
+
+# Build artifacts
+dist/
+build/
+
+# Experiment outputs
+results/**/run_*/
+results/**/raw_response.txt
+results/**/provider_error.json
+results/**/parse_error.json
+
+# Keep experiment summaries/configuration for reproducibility
+!results/**/summary.md
+!results/**/summary.json
+!results/**/config.json
+!results/**/prompt.txt
