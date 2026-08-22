@@ -26,6 +26,31 @@ This lab is designed for finance professionals, AI researchers, and software eng
 
 ---
 
+## Suggested Study Order
+
+We recommend working through the chapters sequentially, but actively running the corrupted fixtures when you reach Chapter 04.
+
+Read **Chapters 00–03** first to understand the case, valuation mechanics, and grader design. When you reach **Chapter 04**, do not only read the failure examples—run them. Before each run, predict which grader and diagnostic should fire, then compare your prediction with the benchmark output. This hands-on loop is the fastest way to understand how the eval architecture works.
+
+The highest-value learning loop is:
+
+```text
+predict the failure
+        ↓
+run the corrupted case
+        ↓
+inspect the grader diagnostic
+        ↓
+compare the result with your prediction
+```
+
+Example command:
+```bash
+uv run ib-eval grade examples/corrupted/c03_cash_subtracted
+```
+
+---
+
 ## Chapter Index
 
 | Chapter | Title | What You Will Learn | Key Concepts |

@@ -77,7 +77,7 @@ export OPENAI_API_KEY="sk-..."
 ### Cost Guardrail (Dry-Run Mode)
 To prevent accidental paid API calls, running without the `--execute` flag performs a dry-run:
 ```bash
-uv run ib-eval baseline --case northstar-v1 --provider openai --model gpt-4o --runs 5
+uv run ib-eval baseline --case northstar-v1 --provider openai --model <model-name> --runs 5
 ```
 
 Output:
@@ -87,7 +87,7 @@ Output:
 ==================================================
   Case:        northstar-v1 (Northstar Components, Inc.)
   Provider:    openai
-  Model:       gpt-4o
+  Model:       <model-name>
   Trials:      5
   Output Dir:  results/milestone-1
 --------------------------------------------------
@@ -96,7 +96,7 @@ Output:
   Live provider calls were NOT executed.
   To execute live trials, re-run with the --execute flag:
 
-    uv run ib-eval baseline --case northstar-v1 --provider openai --model gpt-4o --runs 5 --output results/milestone-1 --execute
+    uv run ib-eval baseline --case northstar-v1 --provider openai --model <model-name> --runs 5 --output results/milestone-1 --execute
 ```
 
 ### Executing Live Trials
@@ -105,7 +105,7 @@ When ready, add the `--execute` flag:
 uv run ib-eval baseline \
   --case northstar-v1 \
   --provider openai \
-  --model gpt-4o \
+  --model <model-name> \
   --runs 5 \
   --output results/milestone-1 \
   --execute
@@ -120,7 +120,7 @@ Every experiment run creates a timestamped folder containing complete raw artifa
 ```text
 results/
 └── milestone-1/
-    └── m1-direct-openai-gpt-4o-20260821_120000/
+    └── m1-direct-openai-<model-name>-20260821_120000/
         ├── config.json       # Exact model, parameters, git commit, timestamp
         ├── prompt.txt        # Exact prompt presented to the model
         ├── run_001/

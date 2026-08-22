@@ -287,7 +287,7 @@ export OPENAI_API_KEY="sk-..."
 By default, running without `--execute` prints the experiment configuration without making paid calls:
 
 ```bash
-uv run ib-eval baseline --case northstar-v1 --provider openai --model gpt-4o --runs 5
+uv run ib-eval baseline --case northstar-v1 --provider openai --model <model-name> --runs 5
 ```
 
 #### 2. Execute live trials
@@ -295,7 +295,7 @@ uv run ib-eval baseline --case northstar-v1 --provider openai --model gpt-4o --r
 Add `--execute` to run live trials:
 
 ```bash
-uv run ib-eval baseline --case northstar-v1 --provider openai --model gpt-4o --runs 5 --execute
+uv run ib-eval baseline --case northstar-v1 --provider openai --model <model-name> --runs 5 --execute
 ```
 
 Optional parameters:
@@ -310,7 +310,7 @@ Each experiment creates a self-contained directory:
 ```text
 results/
 └── milestone-1/
-    └── m1-direct-openai-gpt-4o-20260821_120000/
+    └── m1-direct-openai-<model-name>-20260821_120000/
         ├── config.json
         ├── prompt.txt
         ├── run_001/
