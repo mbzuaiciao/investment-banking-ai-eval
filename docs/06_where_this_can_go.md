@@ -6,7 +6,7 @@ Corporate valuation is only the beginning. This chapter explores the broader res
 
 ## 1. The Experimental Progression (M0 to M5)
 
-The benchmark is designed to systematically evaluate increasingly sophisticated agent architectures:
+The benchmark is designed to systematically evaluate increasingly sophisticated agent architectures (for complete empirical findings across Milestones 1–3B, see **[Chapter 10 — Results & Findings](10_results_and_findings.md)**):
 
 ```text
 M0: Frozen Deterministic Benchmark Foundation
@@ -15,9 +15,9 @@ M1: Direct Analyst Baseline (Single Call)
                     ↓
 M2: Structured Analyst (Decomposed Pipeline)
                     ↓
-M3: Deterministic Feedback & Self-Repair
+M3 & M3B: Deterministic Feedback & Controlled Repair
                     ↓
-M4: Independent Verifier Agent
+M4: Cross-Case Generalization & Independent Verifier Agent
                     ↓
 M5: Full Iterative Analyst + Verifier Team
 ```
@@ -44,10 +44,10 @@ Let's examine the research question for each milestone:
 
 ---
 
-### Milestone 3: Deterministic Diagnostic Feedback
-- **Architecture**: The model receives machine-readable error diagnostics (e.g. `[CRITICAL] TV_NOT_DISCOUNTED: Expected PV(TV) = TV / (1+WACC)^5`) and is given a single turn to correct its submission.
+### Milestone 3 & 3B: Deterministic Feedback & Controlled Repair (Implemented — see [Chapter 08](08_deterministic_feedback_repair.md) & [Chapter 09](09_controlled_repair_benchmark.md))
+- **Architecture**: The model receives machine-readable error diagnostics and is given a single revision call. Milestone 3 tests naturally occurring generation failures; Milestone 3B tests 10 controlled corrupted failure modes.
 - **Core Research Question**:
-  > *"Can an AI system reliably self-repair specific financial errors when provided with precise compiler-like diagnostics?"*
+  > *"Can an AI system reliably self-repair specific financial errors when provided with precise compiler-like diagnostics, and does repair success generalize across local vs propagating dependency structures?"*
 
 ---
 

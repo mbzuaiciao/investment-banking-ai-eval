@@ -1,4 +1,4 @@
-"""Interface definitions for Milestone 1 Direct Analyst Baseline."""
+"""Interface definitions for Direct, Structured, and Repair Analyst Baselines."""
 
 from __future__ import annotations
 
@@ -59,6 +59,27 @@ class TrialMetadata:
     score: float | None = None
     hard_failure_count: int = 0
     hard_failure_codes: list[str] = field(default_factory=list[str])
+
+    # Milestone 3 Repair-specific fields
+    initial_parsed_successfully: bool = False
+    initial_score: float | None = None
+    repaired_score: float | None = None
+    score_delta: float | None = None
+    initial_hard_failure_count: int = 0
+    repaired_hard_failure_count: int = 0
+    initial_hard_failure_codes: list[str] = field(default_factory=list[str])
+    repaired_hard_failure_codes: list[str] = field(default_factory=list[str])
+    resolved_diagnostics: list[str] = field(default_factory=list[str])
+    persistent_diagnostics: list[str] = field(default_factory=list[str])
+    new_diagnostics: list[str] = field(default_factory=list[str])
+    repair_attempted: bool = False
+    repair_skipped_reason: str | None = None
+    repaired_parsed_successfully: bool | None = None
+    first_call_latency_seconds: float | None = None
+    repair_call_latency_seconds: float | None = None
+    first_call_token_usage: dict[str, int] | None = None
+    repair_call_token_usage: dict[str, int] | None = None
+
     git_commit: str | None = None
 
 
@@ -71,3 +92,12 @@ class TrialResult:
     submission: Submission | None = None
     parse_error: str | None = None
     grade: ScoringReport | None = None
+
+    # Milestone 3 multi-pass artifact preservation
+    initial_raw_response: str | None = None
+    initial_submission: Submission | None = None
+    initial_grade: ScoringReport | None = None
+    repair_prompt: str | None = None
+    repair_raw_response: str | None = None
+    repaired_submission: Submission | None = None
+    repaired_grade: ScoringReport | None = None

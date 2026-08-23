@@ -35,12 +35,16 @@ build/
 
 # Experiment outputs
 results/**/run_*/
+results/**/c[0-9]*/
 results/**/raw_response.txt
+results/**/repair_raw_response.txt
 results/**/provider_error.json
 results/**/parse_error.json
+results/**/repair_parse_error.json
 
 # Keep experiment summaries/configuration for reproducibility
 !results/**/summary.md
 !results/**/summary.json
 !results/**/config.json
 !results/**/prompt.txt
+!results/README.md

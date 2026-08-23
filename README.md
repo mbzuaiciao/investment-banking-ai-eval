@@ -18,6 +18,29 @@ The tutorial covers both the core investment-banking concepts (DCF math, WACC de
 
 ---
 
+## Experimental Results
+
+Empirical results across Milestones 1–3B on the Northstar benchmark:
+
+| Experiment | Workflow Configuration | Sample Size | Parse Success | Mean Score | Hard-Failure Rate | Key Empirical Result |
+|---|---|:---:|:---:|:---:|:---:|---|
+| **M1 Direct (Thinking Off)** | Zero reasoning; direct prompt | 10 runs | 90% (9/10) | 90.5 | 100% *(of parsed)* | Broad formula & arithmetic failures; 0% pass on FCF & TV |
+| **M1 Direct (Thinking High)** | High reasoning; direct prompt | 10 runs | 100% (10/10) | 97.2 | 100% | Core arithmetic improved; systematic TV discounting error on 10/10 runs |
+| **M2 Structured Workflow** | High reasoning; 8-stage decomposition | 10 runs | 100% (10/10) | 99.0 | 30% | TV discounting defect eliminated (100% pass); hard failures reduced to 30% |
+| **M3 Feedback Repair** | Structured prompt + conditional repair | 10 runs | 100% (10/10) | 98.8 *(final)* | 0% *(final)* | 9 clean runs skipped; 1/1 natural failure cleanly repaired ($n=1$) |
+| **M3B Controlled Repair** | 10 Corrupted fixtures + 1-shot repair | 10 fixtures | 100% (10/10) | 100.0 *(final)* | 0% *(final)* | 10/10 target errors resolved; 0 regressions across local & propagating tiers |
+
+### Key Findings at a Glance:
+1. **Reasoning alone does not eliminate systematic defects**: Extended thinking lifted mean score to 97.2 but still produced valuation-breaking TV discounting errors on 100% of direct prompt runs.
+2. **Explicit domain workflow eliminates structural omissions**: Decomposing analysis into 8 financial stages lifted TV pass rates from 0% to 100% and reduced hard failures to 30%.
+3. **Deterministic invariant feedback enables 1-shot self-repair**: Invariant diagnostics without gold leakage cleanly repaired residual errors in live generation and across all 10 controlled failure modes.
+4. **Aggregate scores conceal valuation-breaking flaws**: Models scoring in the high 90s still embedded $200M+ enterprise value errors.
+
+📖 **Read the full research synthesis & methodology**: **[Chapter 10 — Experimental Results & Research Synthesis](docs/10_results_and_findings.md)**  
+📂 **Inspect raw experiment artifacts**: **[results/README.md](results/README.md)**
+
+---
+
 ## What this benchmark evaluates
 
 Investment banking analysis involves a chain of decisions: selecting source
@@ -420,9 +443,119 @@ The report highlights deltas in mean/median scores, standard deviation, parse ra
 
 ---
 
+## Milestone 3: Deterministic Feedback Repair
+
+The **Feedback Repair** experiment tests the hypothesis:
+> *If the model is shown machine-readable deterministic grader diagnostics after its first attempt, can it reliably repair its own financial errors in exactly one revision?*
+
+```text
+Northstar source packet
+        ↓
+structured analyst (Call 1)
+        ↓
+initial submission → deterministic graders
+        ↓
+machine-readable diagnostics (Zero gold leakage)
+        ↓
+one repair revision (Call 2) [skipped if initial is clean]
+        ↓
+repaired submission → deterministic graders
+```
+
+### Running Milestone 3 Repair Experiments
+
+Use `--mode repair` with the `baseline` command:
+
+```bash
+# DeepSeek V4 Flash 3-run smoke test (Repair mode)
+uv run ib-eval baseline \
+  --case northstar-v1 \
+  --provider deepseek \
+  --model deepseek-v4-flash \
+  --mode repair \
+  --thinking on \
+  --reasoning-effort high \
+  --runs 3 \
+  --execute
+
+# DeepSeek V4 Flash 10-run repair experiment
+uv run ib-eval baseline \
+  --case northstar-v1 \
+  --provider deepseek \
+  --model deepseek-v4-flash \
+  --mode repair \
+  --thinking on \
+  --reasoning-effort high \
+  --runs 10 \
+  --output results/milestone-3 \
+  --execute
+```
+
+### Primary Metric: Repair Success Rate
+
+Milestone 3 tracks:
+- **Repair Success Rate**: Proportion of initially failing parsed trials repaired to zero hard failures.
+- **Diagnostic Transitions**: Resolved, Persistent, and Newly Introduced errors per diagnostic code.
+- **Score Delta & Latency/Token Overhead**: Quantitative cost-benefit analysis of the second repair turn.
+
+---
+
+## Milestone 3B: Controlled Repair Benchmark
+
+The **Controlled Repair Benchmark** isolates repair capability from initial generation quality by testing single-revision repair starting from 10 known corrupted fixtures (`c01` through `c10`).
+
+```text
+canonical Northstar case
+        ↓
+known corrupted submission (c01–c10)
+        ↓
+deterministic graders → verify target diagnostic
+        ↓
+invariant feedback prompt (Zero gold leakage)
+        ↓
+one model repair revision
+        ↓
+repaired submission → deterministic graders
+```
+
+### Running the Controlled Repair Benchmark
+
+Use the dedicated `repair-benchmark` command:
+
+```bash
+# Targeted 3-fixture smoke test (Propagating repairs: TV discounting, Capex, WACC)
+uv run ib-eval repair-benchmark \
+  --case northstar-v1 \
+  --provider deepseek \
+  --model deepseek-v4-flash \
+  --thinking on \
+  --reasoning-effort high \
+  --fixtures c02,c08,c10 \
+  --execute
+
+# Full 10-fixture controlled repair benchmark
+uv run ib-eval repair-benchmark \
+  --case northstar-v1 \
+  --provider deepseek \
+  --model deepseek-v4-flash \
+  --thinking on \
+  --reasoning-effort high \
+  --fixtures all \
+  --execute
+```
+
+### Metrics & Diagnostic Analysis
+
+- **Controlled Repair Success Rate**: Proportion of fixtures repaired to zero hard failures with target resolved.
+- **Target Diagnostic Resolution Rate**: Proportion of fixtures where the target diagnostic disappeared.
+- **New Error Introduction Rate**: Measures regression and cascade errors introduced during repair.
+- **Difficulty Analysis**: Contrasts **local repairs** (comps, provenance, headline) against **propagating repairs** (WACC, Capex, revenue base, TV discounting).
+
+---
+
 ## Current limitations
 
-- Milestone 1 and Milestone 2 test single-call completions without external tool execution or iterative multi-agent verifiers.
+- Milestone 1 and Milestone 2 test single-call completions; Milestones 3 and 3B test single-revision repair loops.
 - Qualitative memo evaluation is out of scope.
 - Only one case (Northstar v1) is currently encoded.
 - No web UI or interactive dashboard.
@@ -434,9 +567,11 @@ The report highlights deltas in mean/median scores, standard deviation, parse ra
 - **Milestone 0**: Deterministic benchmark & grader foundation (Completed)
 - **Milestone 1**: Direct analyst baseline (Completed)
 - **Milestone 2**: Structured analyst workflow (Completed)
-- **Milestone 3**: Tool-augmented modeling & Python sandbox verification
-- **Milestone 4**: Multi-agent verifier loops & iterative repair
-- **Milestone 5**: Real-world 10-K extraction & Excel workbook generation
+- **Milestone 3**: Deterministic feedback repair (Completed)
+- **Milestone 3B**: Controlled repair benchmark (Completed)
+- **Milestone 4**: Multi-case generalization & independent verifier models
+- **Milestone 5**: Multi-agent verifier loops & iterative collaboration
+- **Milestone 6**: Real-world SEC 10-K extraction & Excel workbook generation
 
 ---
 

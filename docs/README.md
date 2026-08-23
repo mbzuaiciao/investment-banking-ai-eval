@@ -24,6 +24,12 @@ This lab is designed for finance professionals, AI researchers, and software eng
 06. Where This Can Go (Agentic Architecture Roadmap)
        ↓
 07. Milestone 2: Structured Analyst
+       ↓
+08. Milestone 3: Deterministic Feedback Repair
+       ↓
+09. Milestone 3B: Controlled Repair Benchmark
+       ↓
+10. Experimental Results & Research Synthesis
 ```
 
 ---
@@ -57,7 +63,7 @@ uv run ib-eval grade examples/corrupted/c03_cash_subtracted
 
 | Chapter | Title | What You Will Learn | Key Concepts |
 |---|---|---|---|
-| **[00](00_project_overview.md)** | **[Project Overview](00_project_overview.md)** | Why fluent prose does not equal financial correctness; the 3 core dimensions of evaluation. | Mathematical vs Financial vs Evidentiary correctness; Northstar v1; Milestones 0, 1 & 2 |
+| **[00](00_project_overview.md)** | **[Project Overview](00_project_overview.md)** | Why fluent prose does not equal financial correctness; the 3 core dimensions of evaluation. | Mathematical vs Financial vs Evidentiary correctness; Northstar v1; Milestones 0–3B |
 | **[01](01_northstar_case.md)** | **[The Northstar Case](01_northstar_case.md)** | Full briefing on the synthetic case; the 8 deliberate ambiguity traps embedded in source data. | High-single-digit guidance; Q2 vs YTD trap; GAAP vs Adjusted EBITDA; Convertible debt |
 | **[02](02_dcf_and_comps.md)** | **[DCF & Trading Comps](02_dcf_and_comps.md)** | Step-by-step walkthrough of valuation math from first principles with actual numbers. | Revenue projections; NOPAT; UFCF; CAPM WACC; Gordon Growth TV; Net debt bridge; Comps median |
 | **[03](03_eval_and_graders.md)** | **[AI Evals & Graders](03_eval_and_graders.md)** | How deterministic grading works; why LLM judges are avoided for math; 10 grader specs. | Deterministic evaluators; Machine-readable diagnostics; Tolerances; Hard failure flags |
@@ -65,6 +71,9 @@ uv run ib-eval grade examples/corrupted/c03_cash_subtracted
 | **[05](05_direct_analyst_baseline.md)** | **[Direct Analyst Baseline](05_direct_analyst_baseline.md)** | How Milestone 1 turns the benchmark into a scientific experiment measuring LLM reliability. | Zero-scaffolding baseline; Score variance; Hard-failure rates; Cost guardrails; Offline exploration |
 | **[06](06_where_this_can_go.md)** | **[Where This Can Go](06_where_this_can_go.md)** | The roadmap from direct completion to verifiers, feedback loops, M&A, and full agent teams. | Structured extraction; Verifier models; Iterative repair; Accretion/dilution; LBO modeling |
 | **[07](07_structured_analyst.md)** | **[Structured Analyst (M2)](07_structured_analyst.md)** | How imposing an 8-stage financial workflow reduces critical errors under single-call constraints. | 8-stage reasoning workflow; Occurrence count vs run incidence; Comparative analysis |
+| **[08](08_deterministic_feedback_repair.md)** | **[Feedback Repair (M3)](08_deterministic_feedback_repair.md)** | How deterministic grader diagnostics guide models to repair their own errors in one revision. | Invariant feedback; Repair success rate; Diagnostic transitions; Zero gold leakage |
+| **[09](09_controlled_repair_benchmark.md)** | **[Controlled Repair (M3B)](09_controlled_repair_benchmark.md)** | Measuring single-revision repair across 10 controlled failure modes and propagation difficulties. | Controlled starting states; Local vs propagating repairs; Regression tracking |
+| **[10](10_results_and_findings.md)** | **[Results & Findings](10_results_and_findings.md)** | Canonical research synthesis across Milestones 1–3B; reliability layers and empirical insights. | Three reliability layers; Invariant verification; Score vs reliability; Generalization |
 
 ---
 

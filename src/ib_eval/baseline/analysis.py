@@ -1,4 +1,4 @@
-"""Aggregate statistics and reporting for Direct and Structured Analyst Baselines."""
+"""Aggregate statistics and reporting for Direct, Structured, and Repair Analyst Baselines."""
 
 from __future__ import annotations
 
@@ -66,6 +66,54 @@ class DiagnosticStat(BaseModel):
     run_incidence_rate: float  # run_count / parsed_runs (bounded in [0.0, 1.0])
 
 
+class DiagnosticTransitionStat(BaseModel):
+    """Transition statistics for a single diagnostic code across repair trials."""
+
+    diagnostic_code: str
+    description: str
+    initial_run_count: int = 0
+    repaired_run_count: int = 0
+    resolved_count: int = 0
+    persistent_count: int = 0
+    newly_introduced_count: int = 0
+
+
+class RepairSummaryStats(BaseModel):
+    """Aggregate statistics specific to Milestone 3 repair mode."""
+
+    trials_repair_attempted: int = 0
+    trials_repair_skipped_clean: int = 0
+    initially_failing_runs_count: int = 0
+    initially_failing_runs_repaired_to_zero_hf: int = 0
+    repair_success_rate: float = 0.0
+
+    initial_mean_score: float | None = None
+    initial_median_score: float | None = None
+    initial_hard_failure_run_count: int = 0
+    initial_hard_failure_rate: float = 0.0
+
+    repaired_mean_score: float | None = None
+    repaired_median_score: float | None = None
+    repaired_hard_failure_run_count: int = 0
+    repaired_hard_failure_rate: float = 0.0
+
+    mean_score_delta: float | None = None
+    trials_improved_count: int = 0
+    trials_improved_pct: float = 0.0
+    trials_unchanged_count: int = 0
+    trials_unchanged_pct: float = 0.0
+    trials_worsened_count: int = 0
+    trials_worsened_pct: float = 0.0
+
+    total_diagnostics_resolved: int = 0
+    total_diagnostics_persistent: int = 0
+    total_diagnostics_introduced: int = 0
+
+    diagnostic_transitions: dict[str, DiagnosticTransitionStat] = Field(
+        default_factory=dict[str, DiagnosticTransitionStat]
+    )
+
+
 class GraderSummaryStat(BaseModel):
     """Aggregate statistics for a specific grader."""
 
@@ -108,6 +156,9 @@ class ExperimentSummary(BaseModel):
         default_factory=dict[str, GraderSummaryStat]
     )
 
+    # Milestone 3 specific repair summary
+    repair_stats: RepairSummaryStats | None = None
+
 
 def compute_aggregate_statistics(
     experiment_id: str,
@@ -138,7 +189,7 @@ def compute_aggregate_statistics(
     else:
         stdev_score = None
 
-    # Hard failures
+    # Hard failures (final / effective grade)
     hard_failure_runs = [
         t for t in parsed_trials if t.grade is not None and len(t.grade.hard_failures) > 0
     ]
@@ -227,6 +278,139 @@ def compute_aggregate_statistics(
                 zero_score_count=g_zeros,
             )
 
+    # Milestone 3 Repair summary statistics
+    repair_summary: RepairSummaryStats | None = None
+    if mode == "repair":
+        init_parsed_trials = [t for t in trial_results if t.metadata.initial_parsed_successfully]
+        init_scores = [
+            t.metadata.initial_score
+            for t in init_parsed_trials
+            if t.metadata.initial_score is not None
+        ]
+        init_mean_score = round(statistics.mean(init_scores), 2) if init_scores else None
+        init_median_score = round(statistics.median(init_scores), 2) if init_scores else None
+
+        init_hf_runs = [
+            t for t in init_parsed_trials if t.metadata.initial_hard_failure_count > 0
+        ]
+        init_hf_count = len(init_hf_runs)
+        init_hf_rate = (
+            round(init_hf_count / len(init_parsed_trials), 4) if init_parsed_trials else 0.0
+        )
+
+        rep_attempted_trials = [t for t in trial_results if t.metadata.repair_attempted]
+        rep_skipped_clean = [
+            t
+            for t in trial_results
+            if t.metadata.repair_skipped_reason == "initial_submission_clean"
+        ]
+
+        init_failing_count = init_hf_count
+        repaired_to_zero_hf_count = len(
+            [
+                t
+                for t in init_hf_runs
+                if t.metadata.hard_failure_count == 0 and t.metadata.parsed_successfully
+            ]
+        )
+        repair_success_rate = (
+            round(repaired_to_zero_hf_count / init_failing_count, 4)
+            if init_failing_count > 0
+            else 0.0
+        )
+
+        deltas = [
+            t.metadata.score_delta
+            for t in rep_attempted_trials
+            if t.metadata.score_delta is not None
+        ]
+        mean_delta = round(statistics.mean(deltas), 2) if deltas else 0.0
+        improved_cnt = len([d for d in deltas if d > 0])
+        unchanged_cnt = len([d for d in deltas if d == 0])
+        worsened_cnt = len([d for d in deltas if d < 0])
+        n_deltas = len(deltas)
+        improved_pct = round(improved_cnt / n_deltas, 4) if n_deltas > 0 else 0.0
+        unchanged_pct = round(unchanged_cnt / n_deltas, 4) if n_deltas > 0 else 0.0
+        worsened_pct = round(worsened_cnt / n_deltas, 4) if n_deltas > 0 else 0.0
+
+        # Diagnostic transitions across all repair trials
+        all_trans_codes: set[str] = set()
+        for t in trial_results:
+            all_trans_codes.update(t.metadata.initial_hard_failure_codes)
+            all_trans_codes.update(t.metadata.hard_failure_codes)
+            all_trans_codes.update(t.metadata.resolved_diagnostics)
+            all_trans_codes.update(t.metadata.persistent_diagnostics)
+            all_trans_codes.update(t.metadata.new_diagnostics)
+
+        trans_map: dict[str, DiagnosticTransitionStat] = {}
+        tot_resolved = 0
+        tot_persistent = 0
+        tot_new = 0
+
+        for code in sorted(all_trans_codes):
+            init_runs_c = len(
+                [
+                    t
+                    for t in trial_results
+                    if code in t.metadata.initial_hard_failure_codes
+                    or code in t.metadata.resolved_diagnostics
+                    or code in t.metadata.persistent_diagnostics
+                ]
+            )
+            rep_runs_c = len(
+                [
+                    t
+                    for t in trial_results
+                    if code in t.metadata.hard_failure_codes
+                    or code in t.metadata.persistent_diagnostics
+                    or code in t.metadata.new_diagnostics
+                ]
+            )
+            res_c = len([t for t in trial_results if code in t.metadata.resolved_diagnostics])
+            pers_c = len([t for t in trial_results if code in t.metadata.persistent_diagnostics])
+            new_c = len([t for t in trial_results if code in t.metadata.new_diagnostics])
+
+            tot_resolved += res_c
+            tot_persistent += pers_c
+            tot_new += new_c
+
+            trans_map[code] = DiagnosticTransitionStat(
+                diagnostic_code=code,
+                description=DIAGNOSTIC_DESCRIPTIONS.get(code, "Diagnostic error"),
+                initial_run_count=init_runs_c,
+                repaired_run_count=rep_runs_c,
+                resolved_count=res_c,
+                persistent_count=pers_c,
+                newly_introduced_count=new_c,
+            )
+
+        repair_summary = RepairSummaryStats(
+            trials_repair_attempted=len(rep_attempted_trials),
+            trials_repair_skipped_clean=len(rep_skipped_clean),
+            initially_failing_runs_count=init_failing_count,
+            initially_failing_runs_repaired_to_zero_hf=repaired_to_zero_hf_count,
+            repair_success_rate=repair_success_rate,
+            initial_mean_score=init_mean_score,
+            initial_median_score=init_median_score,
+            initial_hard_failure_run_count=init_hf_count,
+            initial_hard_failure_rate=init_hf_rate,
+            repaired_mean_score=mean_score,
+            repaired_median_score=median_score,
+            repaired_hard_failure_run_count=hard_failure_run_count,
+            repaired_hard_failure_rate=hard_failure_rate,
+            mean_score_delta=mean_delta,
+            trials_improved_count=improved_cnt,
+            trials_improved_pct=improved_pct,
+            trials_unchanged_count=unchanged_cnt,
+            trials_unchanged_pct=unchanged_pct,
+            trials_worsened_count=worsened_cnt,
+            trials_worsened_pct=worsened_pct,
+            total_diagnostics_resolved=tot_resolved,
+            total_diagnostics_persistent=tot_persistent,
+            total_diagnostics_introduced=tot_new,
+            diagnostic_transitions=trans_map,
+        )
+
     return ExperimentSummary(
         experiment_id=experiment_id,
         case_id=case_id,
@@ -250,6 +434,7 @@ def compute_aggregate_statistics(
         diagnostic_stats=diagnostic_stats_map,
         failure_category_frequency=sorted_categories,
         grader_statistics=grader_stats,
+        repair_stats=repair_summary,
     )
 
 
@@ -268,8 +453,15 @@ def generate_markdown_summary(
     parse_rate_pct = f"{summary.parse_success_rate:.1%}"
     hard_rate_pct = f"{summary.hard_failure_rate:.1%}"
 
-    mode_title = "Structured Analyst" if summary.mode == "structured" else "Direct Analyst Baseline"
-    milestone_num = 2 if summary.mode == "structured" else 1
+    if summary.mode == "repair":
+        mode_title = "Deterministic Feedback Repair"
+        milestone_num = 3
+    elif summary.mode == "structured":
+        mode_title = "Structured Analyst"
+        milestone_num = 2
+    else:
+        mode_title = "Direct Analyst Baseline"
+        milestone_num = 1
 
     lines: list[str] = [
         f"# Milestone {milestone_num} — {mode_title} Report",
@@ -282,53 +474,151 @@ def generate_markdown_summary(
         f"- **Parse Success**: {summary.parsed_runs}/{summary.completed_model_calls} "
         f"({parse_rate_pct})",
         "",
-        "## Summary Statistics",
-        "",
-        "| Metric | Value |",
-        "|---|---|",
-        f"| **Mean Score** | {mean_str} / 100 |",
-        f"| **Median Score** | {median_str} / 100 |",
-        f"| **Min / Max Score** | {min_str} / {max_str} |",
-        f"| **Std Deviation** | {stdev_str} |",
-        f"| **Hard-Failure Rate** | {hard_rate_pct} "
-        f"({summary.hard_failure_run_count}/{summary.parsed_runs} runs) |",
-        "",
-        "## Individual Run Breakdown",
-        "",
-        "| Run | Score | Grade | Hard Failures | Parse Status | Latency |",
-        "|---|---:|:---:|:---:|:---:|---:|",
     ]
 
-    for t in trial_results:
-        m = t.metadata
-        score_val = f"{m.score:.1f}" if m.score is not None else "N/A"
-        grade_letter = t.grade.grade if t.grade is not None else "N/A"
-        hard_str = str(m.hard_failure_count) if m.parsed_successfully else "N/A"
-        status_str = "Passed" if m.parsed_successfully else "Failed"
-        latency_str = f"{m.latency_seconds:.2f}s" if m.latency_seconds is not None else "N/A"
-        lines.append(
-            f"| `{m.run_index:03d}` | {score_val} | {grade_letter} | "
-            f"{hard_str} | {status_str} | {latency_str} |"
+    # If repair mode, show repair-specific summary section
+    if summary.mode == "repair" and summary.repair_stats is not None:
+        rs = summary.repair_stats
+        init_m = f"{rs.initial_mean_score:.1f}" if rs.initial_mean_score is not None else "N/A"
+        rep_m = f"{rs.repaired_mean_score:.1f}" if rs.repaired_mean_score is not None else "N/A"
+        succ_rate_pct = f"{rs.repair_success_rate:.1%}"
+        succ_str = (
+            f"{rs.initially_failing_runs_repaired_to_zero_hf}/"
+            f"{rs.initially_failing_runs_count} runs"
+        )
+        init_hf_desc = (
+            f"{rs.initial_hard_failure_rate:.1%} "
+            f"({rs.initial_hard_failure_run_count} runs)"
+        )
+        rep_hf_desc = (
+            f"{rs.repaired_hard_failure_rate:.1%} "
+            f"({rs.repaired_hard_failure_run_count} runs)"
+        )
+        hf_delta_desc = (
+            f"{(rs.repaired_hard_failure_rate - rs.initial_hard_failure_rate):+.1%}"
         )
 
-    lines.extend([
-        "",
-        "## Failure Frequency Analysis",
-        "",
-        "| Diagnostic Code | Description | Occurrences | Run Incidence | Run % |",
-        "|---|---|---:|---:|---:|",
-    ])
+        lines.extend([
+            "## Repair Performance Summary",
+            "",
+            "| Metric | Initial | Repaired / Final | Delta |",
+            "|---|---:|---:|---:|",
+            f"| **Mean Score** | {init_m} / 100 | {rep_m} / 100 | {rs.mean_score_delta:+.1f} |",
+            f"| **Hard-Failure Rate** | {init_hf_desc} | {rep_hf_desc} | {hf_delta_desc} |",
+            f"| **Repair Success Rate** | — | **{succ_rate_pct}** ({succ_str}) | — |",
+            "",
+            "### Repair Effectiveness",
+            f"- **Trials Improved**: {rs.trials_improved_count} ({rs.trials_improved_pct:.1%})",
+            f"- **Trials Unchanged**: {rs.trials_unchanged_count} ({rs.trials_unchanged_pct:.1%})",
+            f"- **Trials Worsened**: {rs.trials_worsened_count} ({rs.trials_worsened_pct:.1%})",
+            f"- **Diagnostics Resolved**: {rs.total_diagnostics_resolved}",
+            f"- **Diagnostics Persistent**: {rs.total_diagnostics_persistent}",
+            f"- **Diagnostics Newly Introduced**: {rs.total_diagnostics_introduced}",
+            "",
+            "## Individual Run Breakdown",
+            "",
+            "| Run | Initial | Repaired | Δ Score | Init HF | Rep HF | Result | Latency |",
+            "|---|---:|---:|---:|:---:|:---:|---|---:|",
+        ])
 
-    if summary.diagnostic_stats:
-        for code, stat in summary.diagnostic_stats.items():
-            run_pct = f"{stat.run_incidence_rate:.1%}"
-            inc_str = f"{stat.run_count} / {summary.parsed_runs} runs"
+        for t in trial_results:
+            m = t.metadata
+            init_s = f"{m.initial_score:.1f}" if m.initial_score is not None else "N/A"
+            rep_s = f"{m.score:.1f}" if m.score is not None else "N/A"
+            d_s = f"{m.score_delta:+.1f}" if m.score_delta is not None else "N/A"
+            init_hf = str(m.initial_hard_failure_count) if m.initial_parsed_successfully else "N/A"
+            rep_hf = str(m.hard_failure_count) if m.parsed_successfully else "N/A"
+
+            if m.repair_skipped_reason == "initial_submission_clean":
+                res_str = "Already Clean"
+            elif m.repair_attempted:
+                if m.hard_failure_count == 0 and m.parsed_successfully:
+                    res_str = "Repaired (Clean)"
+                elif m.score_delta is not None and m.score_delta > 0:
+                    res_str = "Partially Repaired"
+                elif m.score_delta is not None and m.score_delta < 0:
+                    res_str = "Worsened"
+                else:
+                    res_str = "Unchanged"
+            else:
+                res_str = "Parse Failure"
+
+            lat_str = f"{m.latency_seconds:.2f}s" if m.latency_seconds is not None else "N/A"
             lines.append(
-                f"| `{code}` | {stat.description} | {stat.occurrence_count} | "
-                f"{inc_str} | {run_pct} |"
+                f"| `{m.run_index:03d}` | {init_s} | {rep_s} | {d_s} | "
+                f"{init_hf} | {rep_hf} | {res_str} | {lat_str} |"
             )
+
+        # Diagnostic Transitions Table
+        lines.extend([
+            "",
+            "## Diagnostic Transition Analysis",
+            "",
+            "| Diagnostic Code | Description | Init Runs | Rep Runs | "
+            "Resolved | Persistent | New |",
+            "|---|---|---:|---:|---:|---:|---:|",
+        ])
+
+        if rs.diagnostic_transitions:
+            for code, tr in rs.diagnostic_transitions.items():
+                lines.append(
+                    f"| `{code}` | {tr.description} | {tr.initial_run_count} | "
+                    f"{tr.repaired_run_count} | {tr.resolved_count} | {tr.persistent_count} | "
+                    f"{tr.newly_introduced_count} |"
+                )
+        else:
+            lines.append("| *(none)* | No diagnostics recorded | 0 | 0 | 0 | 0 | 0 |")
+
     else:
-        lines.append("| *(none)* | No diagnostic failures recorded | 0 | 0 / 0 runs | 0.0% |")
+        # Standard summary table for direct and structured modes
+        lines.extend([
+            "## Summary Statistics",
+            "",
+            "| Metric | Value |",
+            "|---|---|",
+            f"| **Mean Score** | {mean_str} / 100 |",
+            f"| **Median Score** | {median_str} / 100 |",
+            f"| **Min / Max Score** | {min_str} / {max_str} |",
+            f"| **Std Deviation** | {stdev_str} |",
+            f"| **Hard-Failure Rate** | {hard_rate_pct} "
+            f"({summary.hard_failure_run_count}/{summary.parsed_runs} runs) |",
+            "",
+            "## Individual Run Breakdown",
+            "",
+            "| Run | Score | Grade | Hard Failures | Parse Status | Latency |",
+            "|---|---:|:---:|:---:|:---:|---:|",
+        ])
+
+        for t in trial_results:
+            m = t.metadata
+            score_val = f"{m.score:.1f}" if m.score is not None else "N/A"
+            grade_letter = t.grade.grade if t.grade is not None else "N/A"
+            hard_str = str(m.hard_failure_count) if m.parsed_successfully else "N/A"
+            status_str = "Passed" if m.parsed_successfully else "Failed"
+            latency_str = f"{m.latency_seconds:.2f}s" if m.latency_seconds is not None else "N/A"
+            lines.append(
+                f"| `{m.run_index:03d}` | {score_val} | {grade_letter} | "
+                f"{hard_str} | {status_str} | {latency_str} |"
+            )
+
+        lines.extend([
+            "",
+            "## Failure Frequency Analysis",
+            "",
+            "| Diagnostic Code | Description | Occurrences | Run Incidence | Run % |",
+            "|---|---|---:|---:|---:|",
+        ])
+
+        if summary.diagnostic_stats:
+            for code, stat in summary.diagnostic_stats.items():
+                run_pct = f"{stat.run_incidence_rate:.1%}"
+                inc_str = f"{stat.run_count} / {summary.parsed_runs} runs"
+                lines.append(
+                    f"| `{code}` | {stat.description} | {stat.occurrence_count} | "
+                    f"{inc_str} | {run_pct} |"
+                )
+        else:
+            lines.append("| *(none)* | No diagnostic failures recorded | 0 | 0 / 0 runs | 0.0% |")
 
     lines.extend([
         "",
@@ -415,8 +705,29 @@ def compare_experiments(exp_a: ExperimentSummary, exp_b: ExperimentSummary) -> s
         f"{fmt_pct_delta(exp_a.hard_failure_rate, exp_b.hard_failure_rate)} |",
     ])
 
+    # If Experiment B is a repair run, report repair effectiveness
+    if exp_b.repair_stats is not None:
+        rs_b = exp_b.repair_stats
+        lines.extend([
+            "",
+            "## Repair Effectiveness (Experiment B)",
+            "",
+            f"- **Repair Success Rate**: **{rs_b.repair_success_rate:.1%}** "
+            f"({rs_b.initially_failing_runs_repaired_to_zero_hf}/"
+            f"{rs_b.initially_failing_runs_count} initially failing runs)",
+            f"- **Trials Improved**: {rs_b.trials_improved_count} ({rs_b.trials_improved_pct:.1%})",
+            f"- **Trials Unchanged**: {rs_b.trials_unchanged_count} "
+            f"({rs_b.trials_unchanged_pct:.1%})",
+            f"- **Trials Worsened**: {rs_b.trials_worsened_count} ({rs_b.trials_worsened_pct:.1%})",
+            f"- **Diagnostics Resolved**: {rs_b.total_diagnostics_resolved}",
+            f"- **Diagnostics Persistent**: {rs_b.total_diagnostics_persistent}",
+            f"- **Diagnostics Introduced**: {rs_b.total_diagnostics_introduced}",
+        ])
+
     # Key Diagnostic Run Incidence Comparison
-    all_diag_codes = sorted(set(exp_a.diagnostic_stats.keys()) | set(exp_b.diagnostic_stats.keys()))
+    all_diag_codes = sorted(
+        set(exp_a.diagnostic_stats.keys()) | set(exp_b.diagnostic_stats.keys())
+    )
 
     lines.extend([
         "",
@@ -446,7 +757,9 @@ def compare_experiments(exp_a: ExperimentSummary, exp_b: ExperimentSummary) -> s
         lines.append("| *(none)* | No diagnostics recorded | 0.0% | 0.0% | 0.0% |")
 
     # Grader Pass Rate Comparison
-    all_graders = sorted(set(exp_a.grader_statistics.keys()) | set(exp_b.grader_statistics.keys()))
+    all_graders = sorted(
+        set(exp_a.grader_statistics.keys()) | set(exp_b.grader_statistics.keys())
+    )
     lines.extend([
         "",
         "## Grader Pass Rate Comparison",

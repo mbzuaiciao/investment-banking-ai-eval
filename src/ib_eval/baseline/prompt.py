@@ -1,11 +1,143 @@
-"""Prompt construction for Milestone 1 Direct Baseline and Milestone 2 Structured Analyst."""
+"""Prompt construction for Direct Baseline (M1), Structured Analyst (M2), and Repair (M3)."""
 
 from __future__ import annotations
 
 import json
 
 from ib_eval.case import NorthstarCase
-from ib_eval.schemas import Submission
+from ib_eval.schemas import GraderFailure, ScoringReport, Submission
+
+DIAGNOSTIC_INVARIANT_GUIDES: dict[str, str] = {
+    "SF_GUIDANCE_FABRICATED": (
+        "Management guidance was qualitative ('high single digits'); do not classify exact "
+        "numerical choices as direct guidance. Set classification to 'analyst_assumption'."
+    ),
+    "SF_MISSING_PROVENANCE": (
+        "Missing provenance records for key financial inputs. Provide explicit provenance records."
+    ),
+    "REV_QUARTERLY_CONFUSION": (
+        "Historical base revenue must use full-year annual figures (2025A = 1000.0), not quarterly "
+        "(Q2 = 281.0) or half-year (H1 = 535.0) figures."
+    ),
+    "REV_GROWTH_OUT_OF_RANGE": (
+        "Revenue growth assumption falls outside the defensible range supported by "
+        "management guidance."
+    ),
+    "REV_ARITHMETIC": (
+        "Revenue forecast arithmetic inconsistency: Revenue_t must equal "
+        "Revenue_(t-1) * (1 + growth_t) for all forecast years."
+    ),
+    "MARGIN_EBITDA_INCONSISTENCY": (
+        "EBITDA arithmetic error: EBITDA_t must equal Revenue_t * EBITDA_Margin_t."
+    ),
+    "MARGIN_DA_INCONSISTENCY": (
+        "D&A percentage calculation error: D&A_t must equal Revenue_t * DA_Margin_t."
+    ),
+    "MARGIN_EBIT_INCONSISTENCY": (
+        "EBIT arithmetic error: EBIT_t must equal EBITDA_t - D&A_t."
+    ),
+    "FCF_NOPAT_ERROR": (
+        "NOPAT formula error: NOPAT_t must equal EBIT_t * (1 - tax_rate)."
+    ),
+    "FCF_CAPEX_DOUBLE_COUNTED": (
+        "Capex was subtracted multiple times or deducted incorrectly."
+    ),
+    "FCF_CAPEX_ERROR": (
+        "Capex calculation error: Capex_t must equal Revenue_t * Capex_pct_t."
+    ),
+    "FCF_NWC_DELTA_ERROR": (
+        "ΔNWC arithmetic error: ΔNWC_t must equal NWC_t - NWC_(t-1)."
+    ),
+    "FCF_UFCF_ERROR": (
+        "UFCF formula error: UFCF_t must equal NOPAT_t + D&A_t - Capex_t - ΔNWC_t."
+    ),
+    "FCF_PV_ERROR": (
+        "PV(UFCF) discounting error: PV(UFCF)_t must equal UFCF_t / (1 + WACC)^t."
+    ),
+    "WACC_PRETAX_DEBT": (
+        "After-tax cost of debt must reflect the interest tax shield: "
+        "Kd_after_tax = Kd * (1 - tax_rate)."
+    ),
+    "WACC_FORMULA_ERROR": (
+        "WACC formula error: WACC must equal (We * Ke) + (Wd * Kd_after_tax)."
+    ),
+    "WACC_WEIGHTS_ERROR": (
+        "Capital structure weights must sum to 1.0 (We + Wd = 1.0)."
+    ),
+    "WACC_KE_ERROR": (
+        "Cost of equity CAPM error: Ke = Rf + Beta * ERP."
+    ),
+    "WACC_KD_ERROR": (
+        "After-tax cost of debt error: Kd_after_tax = Kd * (1 - tax_rate)."
+    ),
+    "TV_NOT_DISCOUNTED": (
+        "Terminal value must be discounted back to valuation date (t=0): "
+        "PV(TV) = TV / (1 + WACC)^n. Do not add undiscounted TV directly to Enterprise Value."
+    ),
+    "TV_FORMULA_ERROR": (
+        "Terminal value Gordon Growth error: TV = Terminal FCF / (WACC - g), "
+        "where Terminal FCF = UFCF_final * (1 + g)."
+    ),
+    "TV_GROWTH_GT_WACC": (
+        "Terminal growth rate g must be strictly less than WACC (g < WACC)."
+    ),
+    "TV_PV_ERROR": (
+        "Terminal value present value discounting error: PV(TV) = TV / (1 + WACC)^n."
+    ),
+    "EV_SUM_PVUFCF_MISMATCH": (
+        "Sum of PV(UFCF) must equal the sum of annual PV(UFCF)_t values."
+    ),
+    "EV_SUM_ERROR": (
+        "Enterprise Value must equal Sum of PV(UFCF) + PV(TV)."
+    ),
+    "EQ_BRIDGE_CASH_REVERSED": (
+        "Cash reduces net debt: Net Debt = Gross Debt - Cash. Do not add cash to debt."
+    ),
+    "EQ_BRIDGE_DEBT_OMITTED": (
+        "Net debt must be deducted from Enterprise Value: "
+        "Equity Value = Enterprise Value - Net Debt."
+    ),
+    "EQ_BRIDGE_NET_DEBT_ERROR": (
+        "Net debt arithmetic error: Net Debt = Gross Debt - Cash."
+    ),
+    "EQ_BRIDGE_ARITHMETIC": (
+        "Equity value arithmetic error: Equity Value = Enterprise Value - Net Debt."
+    ),
+    "EQ_BRIDGE_SHARE_PRICE": (
+        "Implied share price error: Implied Share Price = Equity Value / Diluted Shares."
+    ),
+    "EQ_BRIDGE_EV_MISMATCH": (
+        "Equity bridge Enterprise Value must match the DCF Enterprise Value."
+    ),
+    "COMPS_NM_COERCED_ZERO": (
+        "Non-meaningful (N/M) peer multiple (negative EBITDA) must be excluded from "
+        "median calculation, not coerced to 0.0x."
+    ),
+    "COMPS_MEDIAN_ERROR": (
+        "Peer multiple median calculated incorrectly across valid peers."
+    ),
+    "COMPS_EV_ARITHMETIC": (
+        "Comps EV arithmetic error: Comps EV = Median Multiple * Target EBITDA."
+    ),
+    "COMPS_EQUITY_ARITHMETIC": (
+        "Comps Equity Value arithmetic error: Equity Value = Comps EV - Net Debt."
+    ),
+    "COMPS_SHARE_PRICE_ERROR": (
+        "Comps implied share price arithmetic error: Share Price = Comps Equity / Diluted Shares."
+    ),
+    "CONSISTENCY_HEADLINE_DCF": (
+        "Headline DCF outputs must match detailed DCF model values exactly."
+    ),
+    "CONSISTENCY_HEADLINE_COMPS": (
+        "Headline Comps outputs must match detailed Comps model values exactly."
+    ),
+    "CONSISTENCY_EV_BRIDGE": (
+        "Equity bridge Enterprise Value must match DCF Enterprise Value."
+    ),
+    "CONSISTENCY_SHARES": (
+        "Diluted shares count must be identical across all model sections."
+    ),
+}
 
 
 def _load_sources_block(case: NorthstarCase) -> str:
@@ -201,6 +333,97 @@ Before generating your final JSON output, verify each internal invariant:
 ## Submission Schema
 
 Your response must be a single, valid JSON object matching the following JSON Schema:
+
+```json
+{schema_json}
+```
+
+Return ONLY the raw JSON object conforming to this schema (or inside a ```json ``` block).
+Do not include conversational filler.
+"""
+    return prompt.strip()
+
+
+def build_repair_prompt(
+    case: NorthstarCase,
+    initial_submission: Submission,
+    grade_report: ScoringReport,
+) -> str:
+    """Build the Milestone 3 deterministic feedback repair prompt.
+
+    Contains initial submission JSON, machine-readable diagnostic feedback,
+    and instructions to recompute all dependent fields without leaking gold benchmark answers.
+    """
+    initial_sub_json = json.dumps(initial_submission.model_dump(), indent=2)
+    schema_json = json.dumps(Submission.model_json_schema(), indent=2)
+
+    all_failures: list[GraderFailure] = []
+    seen_failures: set[tuple[str, str, str]] = set()
+    for g_res in grade_report.grader_results:
+        for f in g_res.failures:
+            key = (f.diagnostic_code, f.metric, str(f.observed))
+            if key not in seen_failures:
+                seen_failures.add(key)
+                all_failures.append(f)
+
+    diag_blocks: list[str] = []
+    for f in all_failures:
+        code = f.diagnostic_code
+        guide = DIAGNOSTIC_INVARIANT_GUIDES.get(
+            code,
+            f.message or "A valuation invariant or arithmetic constraint was violated.",
+        )
+        obs_val = f.observed if f.observed is not None else "N/A"
+        diag_blocks.append(
+            f"- **DIAGNOSTIC**: `{code}`\n"
+            f"  - Severity: `{f.severity}`\n"
+            f"  - Affected Metric: `{f.metric}`\n"
+            f"  - Your Submitted Value: `{obs_val}`\n"
+            f"  - Violated Invariant & Correction Rule: {guide}"
+        )
+
+    diagnostics_text = "\n\n".join(diag_blocks) if diag_blocks else "No failures detected."
+
+    prompt = f"""You previously submitted an investment-banking valuation for {case.meta.company}.
+
+The evaluation harness graded your initial submission and identified the following errors:
+
+## Deterministic Grader Diagnostics
+
+{diagnostics_text}
+
+---
+
+## Your Previous Submission
+
+```json
+{initial_sub_json}
+```
+
+---
+
+## Revision Instructions
+
+Revise your submission to fix all identified errors.
+
+### Critical Requirements:
+1. **Preserve Valid Assumptions**: Do not change valid historical facts or defensible assumptions
+   unless a diagnostic specifically requires doing so.
+2. **Recompute All Downstream Dependent Values**: A fix to an upstream metric (such as Revenue,
+   NOPAT, Capex, ΔNWC, UFCF, WACC, or Terminal Value) cascades into all downstream outputs.
+   You must explicitly recalculate:
+   - Forecast Free Cash Flows (UFCF_t) and Discount Factors
+   - Terminal FCF (UFCF_2030E * (1 + g)) and Terminal Value (TV)
+   - Present Value of Terminal Value (PV(TV) = TV / (1 + WACC)^5) discounted to valuation date
+   - Enterprise Value (EV = Sum PV(UFCF) + PV(TV))
+   - Net Debt (Gross Debt - Cash) and Equity Value (EV - Net Debt)
+   - Implied Share Price (Equity Value / Diluted Shares)
+3. **Cross-Artifact Consistency**: Ensure headline valuation outputs match your detailed DCF and
+   Comparable Companies model schedules exactly.
+4. **No Fabricated Evidence**: Use only stated facts from the Northstar case sources.
+5. **Single Complete Submission**: Return one complete canonical JSON object matching the schema.
+
+## Submission Schema
 
 ```json
 {schema_json}

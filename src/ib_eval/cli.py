@@ -13,6 +13,7 @@ from ib_eval.schemas import Submission
 from ib_eval.scoring import grade_submission
 
 _CASES_DIR = Path(__file__).parent.parent.parent / "cases"
+_CORRUPTED_DIR = Path(__file__).parent.parent.parent / "examples" / "corrupted"
 
 
 def _find_submission_file(submission_dir: Path) -> Path:
@@ -140,9 +141,9 @@ def grade(
 )
 @click.option(
     "--mode",
-    type=click.Choice(["direct", "structured"], case_sensitive=False),
+    type=click.Choice(["direct", "structured", "repair"], case_sensitive=False),
     default="direct",
-    help="Experiment mode: direct (M1) or structured (M2) (default: direct)",
+    help="Experiment mode: direct (M1), structured (M2), or repair (M3) (default: direct)",
 )
 @click.option(
     "--runs",
@@ -156,7 +157,9 @@ def grade(
     default=None,
     help=(
         "Output directory for artifacts "
-        "(default: results/milestone-1 for direct, results/milestone-2 for structured)"
+        "(default: results/milestone-1 for direct, "
+        "results/milestone-2 for structured, "
+        "results/milestone-3 for repair)"
     ),
 )
 @click.option(
@@ -203,7 +206,7 @@ def baseline(
     reasoning_effort: str | None,
     execute: bool,
 ) -> None:
-    """Run the Direct (M1) or Structured (M2) Analyst Baseline experiment."""
+    """Run Direct (M1), Structured (M2), or Repair (M3) Analyst Baseline experiment."""
     from ib_eval.baseline.interface import ProviderConfig
     from ib_eval.baseline.providers import DeepSeekAnalyst, MockAnalyst, OpenAIAnalyst
     from ib_eval.baseline.runner import run_baseline_experiment
@@ -219,6 +222,8 @@ def baseline(
     # Resolve output directory based on mode if not explicitly provided
     if output_dir is not None:
         out_path = Path(output_dir)
+    elif mode_normalized == "repair":
+        out_path = Path("results/milestone-3")
     elif mode_normalized == "structured":
         out_path = Path("results/milestone-2")
     else:
@@ -246,11 +251,12 @@ def baseline(
     )
 
     # Cost / Confirmation guardrail
-    milestone_label = (
-        "Milestone 2: Structured Analyst"
-        if mode_normalized == "structured"
-        else "Milestone 1: Direct Analyst Baseline"
-    )
+    if mode_normalized == "repair":
+        milestone_label = "Milestone 3: Deterministic Feedback Repair"
+    elif mode_normalized == "structured":
+        milestone_label = "Milestone 2: Structured Analyst"
+    else:
+        milestone_label = "Milestone 1: Direct Analyst Baseline"
     click.echo("==================================================")
     click.echo(f"  IB-Eval — {milestone_label}")
     click.echo("==================================================")
@@ -367,4 +373,213 @@ def compare(exp_dir_a: Path, exp_dir_b: Path) -> None:
 
     report = compare_experiments(summary_a, summary_b)
     click.echo(report)
+
+
+@main.command(name="repair-benchmark")
+@click.option(
+    "--case",
+    "case_id",
+    default="northstar-v1",
+    help="Case identifier to evaluate against (default: northstar-v1)",
+)
+@click.option(
+    "--case-dir",
+    default=None,
+    help="Path to case directory (overrides --case)",
+)
+@click.option(
+    "--provider",
+    type=click.Choice(["openai", "deepseek", "mock"], case_sensitive=False),
+    default="deepseek",
+    help="Analyst provider to invoke (default: deepseek)",
+)
+@click.option(
+    "--model",
+    default="deepseek-v4-flash",
+    help="Model identifier (default: deepseek-v4-flash)",
+)
+@click.option(
+    "--fixtures",
+    "fixtures_selector",
+    default="all",
+    help="Fixtures to test: 'all' or comma-separated IDs (e.g. 'c02,c08,c10') (default: all)",
+)
+@click.option(
+    "--output",
+    "output_dir",
+    default=None,
+    help="Output directory for artifacts (default: results/milestone-3b)",
+)
+@click.option(
+    "--temperature",
+    type=float,
+    default=None,
+    help="Sampling temperature",
+)
+@click.option(
+    "--seed",
+    type=int,
+    default=None,
+    help="Random seed for provider calls",
+)
+@click.option(
+    "--thinking",
+    type=click.Choice(["on", "off", "true", "false"], case_sensitive=False),
+    default=None,
+    help="Enable or disable thinking / reasoning mode (on, off)",
+)
+@click.option(
+    "--reasoning-effort",
+    type=click.Choice(["low", "medium", "high"], case_sensitive=False),
+    default=None,
+    help="Reasoning effort level for thinking mode (low, medium, high)",
+)
+@click.option(
+    "--execute",
+    is_flag=True,
+    default=False,
+    help="Execute live API calls (required guardrail)",
+)
+def repair_benchmark(
+    case_id: str,
+    case_dir: str | None,
+    provider: str,
+    model: str,
+    fixtures_selector: str,
+    output_dir: str | None,
+    temperature: float | None,
+    seed: int | None,
+    thinking: str | None,
+    reasoning_effort: str | None,
+    execute: bool,
+) -> None:
+    """Run the Milestone 3B Controlled Repair Benchmark against known corrupted fixtures."""
+    from ib_eval.baseline.interface import ProviderConfig
+    from ib_eval.baseline.providers import DeepSeekAnalyst, MockAnalyst, OpenAIAnalyst
+    from ib_eval.controlled_repair import resolve_fixtures, run_controlled_repair_benchmark
+
+    case_path = Path(case_dir) if case_dir is not None else _CASES_DIR / case_id
+    if not case_path.exists():
+        raise click.ClickException(f"Case directory not found: {case_path}")
+
+    case_obj = load_case(case_path)
+    out_path = Path(output_dir) if output_dir is not None else Path("results/milestone-3b")
+
+    try:
+        fixtures_to_run = resolve_fixtures(fixtures_selector, _CORRUPTED_DIR)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    thinking_bool: bool | None = None
+    if thinking is not None:
+        thinking_bool = thinking.lower() in ("on", "true")
+
+    if reasoning_effort is not None:
+        reasoning_effort = reasoning_effort.lower()
+        if thinking_bool is False:
+            raise click.ClickException(
+                "Cannot specify --reasoning-effort when --thinking is set to 'off'."
+            )
+
+    config = ProviderConfig(
+        provider=provider,
+        model=model,
+        mode="controlled-repair",
+        temperature=temperature,
+        seed=seed,
+        thinking=thinking_bool,
+        reasoning_effort=reasoning_effort,
+    )
+
+    fixture_ids = [f.fixture_id for f in fixtures_to_run]
+    click.echo("==================================================")
+    click.echo("  IB-Eval — Milestone 3B: Controlled Repair Benchmark")
+    click.echo("==================================================")
+    click.echo(f"  Case:        {case_obj.meta.case_id} ({case_obj.meta.company})")
+    click.echo("  Mode:        controlled-repair")
+    click.echo(f"  Provider:    {provider}")
+    click.echo(f"  Model:       {model}")
+    click.echo(f"  Fixtures:    {len(fixtures_to_run)} ({', '.join(fixture_ids)})")
+    click.echo(f"  Output Dir:  {out_path}")
+    if temperature is not None:
+        click.echo(f"  Temperature: {temperature}")
+    if seed is not None:
+        click.echo(f"  Seed:        {seed}")
+    if thinking_bool is not None:
+        click.echo(f"  Thinking:    {'on' if thinking_bool else 'off'}")
+    if reasoning_effort is not None:
+        click.echo(f"  Reasoning:   {reasoning_effort}")
+    click.echo("--------------------------------------------------")
+
+    if not execute:
+        click.echo()
+        click.echo("  [DRY-RUN / GUARDRAIL ACTIVE]")
+        click.echo("  Live provider calls were NOT executed.")
+        click.echo("  To execute live trials, re-run with the --execute flag:")
+        click.echo()
+        flags: list[str] = []
+        if fixtures_selector != "all":
+            flags.append(f"--fixtures {fixtures_selector}")
+        if thinking is not None:
+            flags.append(f"--thinking {thinking.lower()}")
+        if reasoning_effort is not None:
+            flags.append(f"--reasoning-effort {reasoning_effort.lower()}")
+        if output_dir is not None:
+            flags.append(f"--output {output_dir}")
+        extra_flags = f" {' '.join(flags)}" if flags else ""
+        click.echo(
+            f"    uv run ib-eval repair-benchmark --case {case_id} --provider {provider} "
+            f"--model {model}{extra_flags} --execute"
+        )
+        click.echo()
+        return
+
+    # Instantiate provider
+    if provider == "openai":
+        try:
+            analyst = OpenAIAnalyst(config=config)
+        except Exception as exc:
+            raise click.ClickException(str(exc)) from exc
+    elif provider == "deepseek":
+        try:
+            analyst = DeepSeekAnalyst(config=config)
+        except Exception as exc:
+            raise click.ClickException(str(exc)) from exc
+    elif provider == "mock":
+        analyst = MockAnalyst()
+    else:
+        raise click.ClickException(
+            f"Unsupported provider: {provider}. Supported: openai, deepseek, mock"
+        )
+
+    click.echo(f"  Running repair benchmark across {len(fixtures_to_run)} fixture(s)...")
+    res = run_controlled_repair_benchmark(
+        case=case_obj,
+        analyst_provider=analyst,
+        config=config,
+        fixtures=fixtures_to_run,
+        corrupted_dir=_CORRUPTED_DIR,
+        output_dir=out_path,
+    )
+
+    s = res.summary
+    succ_rate = f"{s.controlled_repair_success_rate:.1%}"
+    succ_desc = f"{succ_rate} ({s.controlled_repair_success_count}/{s.total_fixtures_attempted})"
+    res_rate = f"{s.target_diagnostic_resolution_rate:.1%}"
+    res_desc = f"{res_rate} ({s.target_diagnostic_resolved_count}/{s.total_fixtures_attempted})"
+    new_rate = f"{s.new_error_introduction_rate:.1%}"
+    new_desc = f"{new_rate} ({s.new_error_introduced_count}/{s.total_fixtures_attempted})"
+    click.echo("--------------------------------------------------")
+    click.echo(f"  Experiment ID:              {res.experiment_id}")
+    click.echo(f"  Controlled Repair Success:  {succ_desc}")
+    click.echo(f"  Target Diagnostic Resolved: {res_desc}")
+    click.echo(f"  New Error Introduced Rate:  {new_desc}")
+    if s.mean_repaired_score is not None:
+        click.echo(
+            f"  Mean Score Delta:           {s.mean_score_delta:+.1f} "
+            f"({s.mean_initial_score:.1f} -> {s.mean_repaired_score:.1f})"
+        )
+    click.echo(f"  Artifacts saved to:         {res.experiment_dir}")
+    click.echo("==================================================")
+
 

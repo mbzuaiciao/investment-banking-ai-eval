@@ -1,0 +1,158 @@
+{
+  "experiment_id": "m3b-controlled-repair-deepseek-deepseek-v4-flash-thinking-high-20260823_123404",
+  "case_id": "northstar-v1",
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "timestamp": "2026-08-23T12:37:01.844865+00:00",
+  "total_fixtures_attempted": 3,
+  "parsed_repair_count": 3,
+  "parse_success_rate": 1.0,
+  "target_diagnostic_resolved_count": 3,
+  "target_diagnostic_resolution_rate": 1.0,
+  "controlled_repair_success_count": 3,
+  "controlled_repair_success_rate": 1.0,
+  "partial_repair_count": 0,
+  "partial_repair_rate": 0.0,
+  "persistent_failure_count": 0,
+  "persistent_failure_rate": 0.0,
+  "new_error_introduced_count": 0,
+  "new_error_introduction_rate": 0.0,
+  "mean_initial_score": 95.67,
+  "mean_repaired_score": 100.0,
+  "mean_score_delta": 4.33,
+  "category_statistics": {
+    "formula": {
+      "category": "formula",
+      "total_count": 2,
+      "resolved_count": 2,
+      "resolution_rate": 1.0,
+      "success_count": 2,
+      "success_rate": 1.0
+    },
+    "valuation": {
+      "category": "valuation",
+      "total_count": 1,
+      "resolved_count": 1,
+      "resolution_rate": 1.0,
+      "success_count": 1,
+      "success_rate": 1.0
+    }
+  },
+  "difficulty_statistics": {
+    "propagating": {
+      "difficulty": "propagating",
+      "total_count": 3,
+      "resolved_count": 3,
+      "resolution_rate": 1.0,
+      "success_count": 3,
+      "success_rate": 1.0
+    }
+  },
+  "fixture_results": [
+    {
+      "fixture_id": "c02",
+      "dir_name": "c02_tv_not_discounted",
+      "name": "Terminal Value Not Discounted",
+      "expected_diagnostic": "TV_NOT_DISCOUNTED",
+      "category": "valuation",
+      "difficulty": "propagating",
+      "initial_score": 98.25,
+      "repaired_score": 100.0,
+      "score_delta": 1.75,
+      "initial_hard_failure_count": 1,
+      "repaired_hard_failure_count": 0,
+      "initial_hard_failure_codes": [
+        "TV_NOT_DISCOUNTED"
+      ],
+      "repaired_hard_failure_codes": [],
+      "expected_diagnostic_resolved": true,
+      "persistent_diagnostics": [],
+      "new_diagnostics": [],
+      "repair_parse_success": true,
+      "repair_success": true,
+      "partial_repair": false,
+      "outcome": "success",
+      "latency_seconds": 40.031,
+      "token_usage": {
+        "prompt_tokens": 7843,
+        "completion_tokens": 6861,
+        "total_tokens": 14704,
+        "cached_prompt_tokens": 0,
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 7843
+      }
+    },
+    {
+      "fixture_id": "c08",
+      "dir_name": "c08_capex_double_counted",
+      "name": "Capex Double Counted",
+      "expected_diagnostic": "FCF_CAPEX_DOUBLE_COUNTED",
+      "category": "formula",
+      "difficulty": "propagating",
+      "initial_score": 96.27,
+      "repaired_score": 100.0,
+      "score_delta": 3.73,
+      "initial_hard_failure_count": 3,
+      "repaired_hard_failure_count": 0,
+      "initial_hard_failure_codes": [
+        "FCF_CAPEX_DOUBLE_COUNTED",
+        "EV_SUM_PVUFCF_MISMATCH",
+        "EV_SUM_ERROR"
+      ],
+      "repaired_hard_failure_codes": [],
+      "expected_diagnostic_resolved": true,
+      "persistent_diagnostics": [],
+      "new_diagnostics": [],
+      "repair_parse_success": true,
+      "repair_success": true,
+      "partial_repair": false,
+      "outcome": "success",
+      "latency_seconds": 78.332,
+      "token_usage": {
+        "prompt_tokens": 8000,
+        "completion_tokens": 11854,
+        "total_tokens": 19854,
+        "cached_prompt_tokens": 0,
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 8000
+      }
+    },
+    {
+      "fixture_id": "c10",
+      "dir_name": "c10_pretax_wacc",
+      "name": "Pre-Tax Cost of Debt in WACC",
+      "expected_diagnostic": "WACC_PRETAX_DEBT",
+      "category": "formula",
+      "difficulty": "propagating",
+      "initial_score": 92.5,
+      "repaired_score": 100.0,
+      "score_delta": 7.5,
+      "initial_hard_failure_count": 4,
+      "repaired_hard_failure_count": 0,
+      "initial_hard_failure_codes": [
+        "WACC_PRETAX_DEBT",
+        "WACC_FORMULA_ERROR",
+        "TV_FORMULA_ERROR",
+        "TV_PV_ERROR"
+      ],
+      "repaired_hard_failure_codes": [],
+      "expected_diagnostic_resolved": true,
+      "persistent_diagnostics": [],
+      "new_diagnostics": [],
+      "repair_parse_success": true,
+      "repair_success": true,
+      "partial_repair": false,
+      "outcome": "success",
+      "latency_seconds": 59.234,
+      "token_usage": {
+        "prompt_tokens": 8093,
+        "completion_tokens": 9257,
+        "total_tokens": 17350,
+        "cached_prompt_tokens": 0,
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 8093
+      }
+    }
+  ],
+  "git_commit": "b8d9f3a7d098ff160cfcc6e3b056067496804dbc"
+}

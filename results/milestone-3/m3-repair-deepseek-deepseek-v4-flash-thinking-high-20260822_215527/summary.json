@@ -1,0 +1,131 @@
+{
+  "experiment_id": "m3-repair-deepseek-deepseek-v4-flash-thinking-high-20260822_215527",
+  "case_id": "northstar-v1",
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "mode": "repair",
+  "requested_runs": 3,
+  "completed_model_calls": 3,
+  "parsed_runs": 3,
+  "parse_failure_count": 0,
+  "parse_success_rate": 1.0,
+  "mean_score": 99.5,
+  "median_score": 100.0,
+  "min_score": 98.5,
+  "max_score": 100.0,
+  "standard_deviation": 0.87,
+  "hard_failure_run_count": 0,
+  "hard_failure_rate": 0.0,
+  "diagnostic_frequency": {},
+  "diagnostic_incidence": {},
+  "diagnostic_stats": {},
+  "failure_category_frequency": {},
+  "grader_statistics": {
+    "source_fidelity": {
+      "grader_name": "source_fidelity",
+      "mean_score": 14.5,
+      "max_points": 15.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "revenue_forecast": {
+      "grader_name": "revenue_forecast",
+      "mean_score": 8.0,
+      "max_points": 8.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "margin_forecast": {
+      "grader_name": "margin_forecast",
+      "mean_score": 7.0,
+      "max_points": 7.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "free_cash_flow": {
+      "grader_name": "free_cash_flow",
+      "mean_score": 10.0,
+      "max_points": 10.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "wacc": {
+      "grader_name": "wacc",
+      "mean_score": 8.0,
+      "max_points": 8.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "terminal_value": {
+      "grader_name": "terminal_value",
+      "mean_score": 7.0,
+      "max_points": 7.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "enterprise_value": {
+      "grader_name": "enterprise_value",
+      "mean_score": 5.0,
+      "max_points": 5.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "equity_bridge": {
+      "grader_name": "equity_bridge",
+      "mean_score": 10.0,
+      "max_points": 10.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "comps": {
+      "grader_name": "comps",
+      "mean_score": 10.0,
+      "max_points": 10.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "consistency": {
+      "grader_name": "consistency",
+      "mean_score": 20.0,
+      "max_points": 20.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    }
+  },
+  "repair_stats": {
+    "trials_repair_attempted": 0,
+    "trials_repair_skipped_clean": 3,
+    "initially_failing_runs_count": 0,
+    "initially_failing_runs_repaired_to_zero_hf": 0,
+    "repair_success_rate": 0.0,
+    "initial_mean_score": 99.5,
+    "initial_median_score": 100.0,
+    "initial_hard_failure_run_count": 0,
+    "initial_hard_failure_rate": 0.0,
+    "repaired_mean_score": 99.5,
+    "repaired_median_score": 100.0,
+    "repaired_hard_failure_run_count": 0,
+    "repaired_hard_failure_rate": 0.0,
+    "mean_score_delta": 0.0,
+    "trials_improved_count": 0,
+    "trials_improved_pct": 0.0,
+    "trials_unchanged_count": 0,
+    "trials_unchanged_pct": 0.0,
+    "trials_worsened_count": 0,
+    "trials_worsened_pct": 0.0,
+    "total_diagnostics_resolved": 0,
+    "total_diagnostics_persistent": 0,
+    "total_diagnostics_introduced": 0,
+    "diagnostic_transitions": {}
+  }
+}
