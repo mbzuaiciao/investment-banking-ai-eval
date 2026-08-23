@@ -1,0 +1,149 @@
+case_id: meridian-v1
+max_score: 100.0
+
+# Hard failure diagnostic codes — always reported even if aggregate score is high
+hard_failure_codes:
+  - SF_GUIDANCE_FABRICATED
+  - SF_MISSING_PROVENANCE
+  - REV_ARR_CONFUSION
+  - REV_QUARTERLY_CONFUSION
+  - DCF_MIDYEAR_CONVENTION_ERROR
+  - TV_NOT_DISCOUNTED
+  - EQ_BRIDGE_NET_CASH_REVERSED
+  - EQ_BRIDGE_CASH_REVERSED
+  - SHARES_BASIC_USED
+  - COMPS_NM_COERCED_ZERO
+  - COMPS_NM_FCF_COERCED_ZERO
+  - WACC_PRETAX_DEBT
+  - CONSISTENCY_HEADLINE_DCF
+  - CONSISTENCY_HEADLINE_COMPS
+  - SBC_EBITDA_INCONSISTENCY
+  - FCF_SOFTWARE_DOUBLE_COUNTED
+  - WC_DEFERRED_REV_REVERSED
+
+graders:
+  - name: source_fidelity
+    weight: 15.0
+    tolerances: {}
+    params:
+      known_sources:
+        - source_01_company_profile.md
+        - source_02_historical_financials.md
+        - source_03_management_guidance.md
+        - source_04_capital_structure.md
+        - source_05_stock_based_compensation.md
+        - source_06_deferred_revenue.md
+        - source_07_peer_comps.md
+        - source_08_accounting_notes.md
+      fabrication_phrases:
+        - "management guided to 20%"
+        - "management stated 20%"
+        - "management explicitly guided 20"
+        - "management provided 20%"
+      guidance_metric: "revenue_growth/2026E"
+
+  - name: revenue_forecast
+    weight: 8.0
+    tolerances:
+      revenue_abs: 0.01
+    params:
+      base_revenue: 760.0
+      gold_revenues:
+        2026: 912.0
+        2027: 1067.04
+        2028: 1216.4256
+        2029: 1350.232416
+        2030: 1458.25100928
+      arr_confusion_value: 880.0
+      growth_range_low: 0.18
+      growth_range_high: 0.22
+      growth_range_label: "18–22%"
+
+  - name: margin_forecast
+    weight: 7.0
+    tolerances:
+      margin_abs: 0.01
+    params:
+      gold_margins:
+        2026: 0.140
+        2027: 0.170
+        2028: 0.200
+        2029: 0.230
+        2030: 0.260
+      da_pct: 0.020
+      sbc_pcts:
+        2026: 0.110
+        2027: 0.100
+        2028: 0.090
+        2029: 0.080
+        2030: 0.070
+
+  - name: free_cash_flow
+    weight: 10.0
+    tolerances:
+      fcf_abs: 0.05
+    params:
+      tax_rate: 0.25
+      capex_pct: 0.050
+      nwc_pct: -0.050
+      prev_nwc: -38.0
+      software_capex_pct: 0.035
+      physical_capex_pct: 0.015
+
+  - name: wacc
+    weight: 8.0
+    tolerances:
+      wacc_abs: 0.0001
+    params: {}
+
+  - name: terminal_value
+    weight: 7.0
+    tolerances:
+      tv_rel: 0.005
+    params:
+      discounting_convention: "mid_year"
+      terminal_discount_exponent: 5.0
+
+  - name: enterprise_value
+    weight: 5.0
+    tolerances:
+      ev_abs: 1.0
+    params: {}
+
+  - name: equity_bridge
+    weight: 10.0
+    tolerances:
+      equity_abs: 0.01
+    params:
+      diluted_shares: 88.0
+      basic_shares: 80.0
+
+  - name: comps
+    weight: 10.0
+    tolerances: {}
+    params:
+      multiple_type: "ev_revenue"
+      nm_peer_name: "Strata Platform"
+      gold_median_ntm: 6.35
+      applied_metric_name: "revenue"
+
+  - name: consistency
+    weight: 20.0
+    tolerances: {}
+    params: {}
+
+error_taxonomy:
+  hard:
+    - arithmetic_error
+    - formula_error
+    - accounting_inconsistency
+    - valuation_error
+    - source_provenance_error
+  soft:
+    - unsupported_assumption
+    - cross_artifact_inconsistency
+
+judgment_differences:
+  - revenue growth rate 18–22% for 2026E (management guided to ~18–22%)
+  - Adjusted EBITDA margin ±50bps from gold path
+  - Capitalized software vs physical PP&E aggregation presentation

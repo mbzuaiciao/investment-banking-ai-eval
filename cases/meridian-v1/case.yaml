@@ -1,0 +1,66 @@
+case_id: meridian-v1
+company: Meridian Cloud Systems, Inc.
+industry: B2B SaaS / Enterprise Infrastructure Software
+valuation_date: "2026-06-30"
+currency: USD
+units: millions (except per-share values)
+description: >
+  Synthetic investment-banking valuation case for AI evaluation.
+  Meridian Cloud Systems, Inc. is a fictional enterprise B2B SaaS and hybrid cloud observability platform.
+  Features high growth, emerging EBITDA, capitalized software, stock-based compensation, deferred revenue cash dynamics, net cash, and mid-year DCF discounting.
+  All financials are synthetic; any resemblance to real companies is coincidental.
+
+fiscal_year_end: December 31
+
+historical_years: [2023, 2024, 2025]
+forecast_years: [2026, 2027, 2028, 2029, 2030]
+
+source_documents:
+  - source_01_company_profile.md
+  - source_02_historical_financials.md
+  - source_03_management_guidance.md
+  - source_04_capital_structure.md
+  - source_05_stock_based_compensation.md
+  - source_06_deferred_revenue.md
+  - source_07_peer_comps.md
+  - source_08_accounting_notes.md
+
+deliberate_traps:
+  - id: TRAP_ARR_VS_REVENUE
+    description: >
+      FY2025 ending ARR is $880.0mm (+22.2% YoY), whereas FY2025 GAAP revenue is $760.0mm (+16.9% YoY).
+      The 2026E forecast must compound from GAAP revenue ($760.0mm), not ARR ($880.0mm).
+  - id: TRAP_DEFERRED_REVENUE_SIGN
+    description: >
+      Deferred revenue / contract liabilities increase by +$65.0mm in 2025A.
+      Increasing deferred revenue is a working-capital source of cash (positive cash flow), not a use of cash.
+  - id: TRAP_SOFTWARE_CAPEX_DOUBLE_COUNTING
+    description: >
+      Source discloses $10.0mm PP&E capex and $26.0mm capitalized software (total $36.0mm investment).
+      Capitalized software must not be deducted as both operating expense in EBIT and capital investment in UFCF.
+  - id: TRAP_NET_CASH_BRIDGE_INVERSION
+    description: >
+      Meridian has $280.0mm cash and $80.0mm convertible debt (Net Cash = +$200.0mm).
+      Net cash must be added to Enterprise Value to determine Equity Value (Equity = EV + Net Cash).
+  - id: TRAP_SBC_EBITDA_INCONSISTENCY
+    description: >
+      Adjusted EBITDA ($93.7mm in 2025A) adds back Stock-Based Compensation ($91.2mm) and D&A ($16.0mm) to GAAP EBIT (-$13.5mm).
+      GAAP EBIT = Adjusted EBITDA - SBC - D&A.
+  - id: TRAP_BASIC_VS_DILUTED_SHARES
+    description: >
+      Basic shares are 80.0mm, while diluted shares are 88.0mm (inclusive of 8.0mm in-the-money options and RSUs).
+      Per-share equity valuation must use 88.0mm diluted shares.
+  - id: TRAP_MIDYEAR_DISCOUNTING_CONVENTION
+    description: >
+      Accounting notes specify Mid-Year discounting convention (t = 0.5, 1.5, 2.5, 3.5, 4.5) for explicit forecast cash flows,
+      while terminal value perpetuity discounts from horizon t = 5.0.
+  - id: TRAP_NM_FCF_PEER_MULTIPLE
+    description: >
+      Strata Platform has negative FCF and N/M EV/FCF multiple.
+      Must be excluded from peer median computation, not coerced to 0.0x.
+  - id: TRAP_PRIMARY_SAAS_MULTIPLE
+    description: >
+      Primary valuation multiple for high-growth SaaS is EV / NTM Revenue (6.35x median), not EV / EBITDA.
+  - id: TRAP_GUIDANCE_CLASSIFICATION
+    description: >
+      Management guides to 18%–22% revenue growth. 20.0% midpoint is an analyst assumption, not a verbatim source fact.

@@ -1,0 +1,334 @@
+{
+  "case_id": "meridian-v1",
+  "analyst": "corrupted_m09",
+  "valuation_date": "2026-06-30",
+  "notes": {
+    "model_narrative": "Canonical gold submission for Meridian Cloud Systems, Inc. (meridian-v1). Derived from first principles using mid-year DCF discounting (t=0.5..4.5 for UFCF, t=5.0 for terminal horizon), SaaS non-cash SBC accounting, deferred revenue working capital dynamics, net cash equity bridge (EV + $200M), and EV / NTM Revenue trading comps.",
+    "growth_assumption_2026E": "Management guided to 20% revenue growth for full year 2026.",
+    "convertible_notes": "Convertible notes ($80.0M) have conversion price $75.00 > current price $52.00; treated as gross debt in capital structure.",
+    "corruption": "M09: Notes claim 'Management guided to 20% revenue growth' verbatim."
+  },
+  "historical": [
+    {
+      "year": 2023,
+      "revenue": 550.0,
+      "ebitda": 17.0,
+      "ebitda_margin": 0.0309,
+      "da": 12.0,
+      "ebit": -61.0,
+      "capex": 26.0,
+      "nwc": -27.5
+    },
+    {
+      "year": 2024,
+      "revenue": 650.0,
+      "ebitda": 52.7,
+      "ebitda_margin": 0.0811,
+      "da": 14.0,
+      "ebit": -39.3,
+      "capex": 31.0,
+      "nwc": -32.5
+    },
+    {
+      "year": 2025,
+      "revenue": 760.0,
+      "ebitda": 93.7,
+      "ebitda_margin": 0.1233,
+      "da": 16.0,
+      "ebit": -13.5,
+      "capex": 36.0,
+      "nwc": -38.0
+    }
+  ],
+  "provenance": [
+    {
+      "metric": "base_revenue",
+      "period": "2025A",
+      "value": 760.0,
+      "source": "source_02_historical_financials.md",
+      "classification": "direct",
+      "confidence": 1.0,
+      "note": "GAAP revenue from consolidated statements ($760.0M), distinct from ending ARR ($880.0M)."
+    },
+    {
+      "metric": "revenue_growth",
+      "period": "2026E",
+      "value": 0.2,
+      "source": "source_03_management_guidance.md",
+      "classification": "analyst_assumption",
+      "confidence": 0.9,
+      "note": "20.0% is the midpoint of management guidance range (18%\u201322%)."
+    },
+    {
+      "metric": "ebitda_margin",
+      "period": "2026E",
+      "value": 0.14,
+      "source": "source_03_management_guidance.md",
+      "classification": "analyst_assumption",
+      "confidence": 0.9,
+      "note": "Adjusted EBITDA margin assumption aligned with management guidance target of 14.0%."
+    },
+    {
+      "metric": "risk_free_rate",
+      "period": "2026",
+      "value": 0.0425,
+      "source": "source_04_capital_structure.md",
+      "classification": "direct",
+      "confidence": 1.0,
+      "note": "10-Year U.S. Treasury yield at valuation date."
+    },
+    {
+      "metric": "beta",
+      "period": "2026",
+      "value": 1.25,
+      "source": "source_04_capital_structure.md",
+      "classification": "direct",
+      "confidence": 1.0,
+      "note": "Levered beta for enterprise SaaS software peer group."
+    },
+    {
+      "metric": "equity_risk_premium",
+      "period": "2026",
+      "value": 0.055,
+      "source": "source_04_capital_structure.md",
+      "classification": "direct",
+      "confidence": 1.0,
+      "note": "Equity risk premium."
+    },
+    {
+      "metric": "gross_debt",
+      "period": "2026",
+      "value": 80.0,
+      "source": "source_04_capital_structure.md",
+      "classification": "direct",
+      "confidence": 1.0,
+      "note": "Out-of-the-money convertible notes treated as debt."
+    },
+    {
+      "metric": "cash",
+      "period": "2026",
+      "value": 280.0,
+      "source": "source_04_capital_structure.md",
+      "classification": "direct",
+      "confidence": 1.0,
+      "note": "Unrestricted corporate cash yielding net cash of +$200.0M."
+    },
+    {
+      "metric": "diluted_shares",
+      "period": "2026",
+      "value": 88.0,
+      "source": "source_04_capital_structure.md",
+      "classification": "direct",
+      "confidence": 1.0,
+      "note": "80.0M basic shares plus 8.0M options and RSUs under treasury stock method."
+    },
+    {
+      "metric": "terminal_growth_rate",
+      "period": "terminal",
+      "value": 0.03,
+      "source": "source_08_accounting_notes.md",
+      "classification": "analyst_assumption",
+      "confidence": 0.85,
+      "note": "Long-term perpetual growth rate aligned with GDP and enterprise software spending."
+    }
+  ],
+  "forecast": [
+    {
+      "year": 2026,
+      "revenue": 912.0,
+      "revenue_growth": 0.2,
+      "ebitda_margin": 0.14,
+      "ebitda": 127.68,
+      "da": 18.240000000000002,
+      "ebit": 9.119999999999997,
+      "nopat": 6.839999999999998,
+      "capex": 45.6,
+      "nwc": -45.6,
+      "delta_nwc": -7.600000000000001,
+      "ufcf": -12.920000000000002,
+      "discount_factor": 0.95012144515881,
+      "pv_ufcf": -12.275569071451827
+    },
+    {
+      "year": 2027,
+      "revenue": 1067.04,
+      "revenue_growth": 0.17,
+      "ebitda_margin": 0.17,
+      "ebitda": 181.3968,
+      "da": 21.340799999999998,
+      "ebit": 53.352000000000004,
+      "nopat": 40.014,
+      "capex": 53.352000000000004,
+      "nwc": -53.352000000000004,
+      "delta_nwc": -7.7520000000000024,
+      "ufcf": 15.754799999999996,
+      "discount_factor": 0.8577038548037104,
+      "pv_ufcf": 13.512952691661493
+    },
+    {
+      "year": 2028,
+      "revenue": 1216.4256,
+      "revenue_growth": 0.14,
+      "ebitda_margin": 0.2,
+      "ebitda": 243.28512,
+      "da": 24.328512,
+      "ebit": 109.47830400000002,
+      "nopat": 82.10872800000001,
+      "capex": 60.82128,
+      "nwc": -60.82128,
+      "delta_nwc": -7.469279999999998,
+      "ufcf": 53.08524000000001,
+      "discount_factor": 0.7742756531741912,
+      "pv_ufcf": 41.10260887490871
+    },
+    {
+      "year": 2029,
+      "revenue": 1350.232416,
+      "revenue_growth": 0.11,
+      "ebitda_margin": 0.23,
+      "ebitda": 310.55345568,
+      "da": 27.00464832,
+      "ebit": 175.53021408,
+      "nopat": 131.64766056000002,
+      "capex": 67.5116208,
+      "nwc": -67.5116208,
+      "delta_nwc": -6.690340800000001,
+      "ufcf": 97.83102888000002,
+      "discount_factor": 0.6989624492658011,
+      "pv_ufcf": 68.38021556015813
+    },
+    {
+      "year": 2030,
+      "revenue": 1458.25100928,
+      "revenue_growth": 0.08,
+      "ebitda_margin": 0.26,
+      "ebitda": 379.14526241280004,
+      "da": 29.165020185600003,
+      "ebit": 247.9026715776,
+      "nopat": 185.92700368319998,
+      "capex": 72.912550464,
+      "nwc": -72.912550464,
+      "delta_nwc": -5.400929664000003,
+      "ufcf": 147.58040306879997,
+      "discount_factor": 0.6309749034220727,
+      "pv_ufcf": 93.11953057332663
+    }
+  ],
+  "wacc_inputs": {
+    "risk_free_rate": 0.0425,
+    "beta": 1.25,
+    "equity_risk_premium": 0.055,
+    "pre_tax_cost_of_debt": 0.055,
+    "tax_rate": 0.25,
+    "equity_weight": 0.95,
+    "debt_weight": 0.05
+  },
+  "wacc_outputs": {
+    "cost_of_equity": 0.11125000000000002,
+    "after_tax_cost_of_debt": 0.04125,
+    "wacc": 0.10775
+  },
+  "terminal_value_inputs": {
+    "method": "gordon_growth",
+    "terminal_growth_rate": 0.03,
+    "exit_multiple": null,
+    "metric": null
+  },
+  "terminal_value_outputs": {
+    "terminal_fcf": 152.00781516086397,
+    "terminal_value_at_horizon": 1955.0844393680254,
+    "pv_terminal_value": 1172.0785704136883
+  },
+  "dcf_outputs": {
+    "sum_pv_ufcf": 203.83973862860313,
+    "pv_terminal_value": 1172.0785704136883,
+    "enterprise_value": 1375.9183090422914
+  },
+  "capital_structure": {
+    "gross_debt": 80.0,
+    "cash": 280.0,
+    "net_debt": -200.0,
+    "diluted_shares": 88.0,
+    "current_share_price": 52.0,
+    "convertible_face_value": 80.0,
+    "convertible_treatment": "debt",
+    "note_convertible": "Convertible notes ($80.0M) are out-of-the-money (conversion price $75.00 vs share price $52.00) and treated as gross debt."
+  },
+  "equity_bridge": {
+    "enterprise_value": 1375.9183090422914,
+    "minus_net_debt": -200.0,
+    "equity_value": 1575.9183090422914,
+    "diluted_shares": 88.0,
+    "implied_share_price": 17.90816260275331
+  },
+  "comps_inputs": {
+    "peers": [
+      {
+        "name": "Aether Data",
+        "ticker": "ADAT",
+        "ntm_ev_ebitda": 7.5,
+        "ltm_ev_ebitda": 8.8,
+        "excluded": false,
+        "exclusion_reason": ""
+      },
+      {
+        "name": "Vanguard SaaS",
+        "ticker": "VGSD",
+        "ntm_ev_ebitda": 6.2,
+        "ltm_ev_ebitda": 7.3,
+        "excluded": false,
+        "exclusion_reason": ""
+      },
+      {
+        "name": "Kestrel Systems",
+        "ticker": "KSTL",
+        "ntm_ev_ebitda": 5.4,
+        "ltm_ev_ebitda": 6.1,
+        "excluded": false,
+        "exclusion_reason": ""
+      },
+      {
+        "name": "Strata Platform",
+        "ticker": "STRT",
+        "ntm_ev_ebitda": 8.8,
+        "ltm_ev_ebitda": 10.2,
+        "excluded": false,
+        "exclusion_reason": "Negative FCF peer (EV/FCF = N/M); EV/NTM Revenue is 8.8x"
+      },
+      {
+        "name": "Nimbus Cloud",
+        "ticker": "NMBS",
+        "ntm_ev_ebitda": 3.5,
+        "ltm_ev_ebitda": 3.8,
+        "excluded": false,
+        "exclusion_reason": ""
+      },
+      {
+        "name": "Helix Software",
+        "ticker": "HLXS",
+        "ntm_ev_ebitda": 6.5,
+        "ltm_ev_ebitda": 7.6,
+        "excluded": false,
+        "exclusion_reason": ""
+      }
+    ],
+    "applied_multiple": 6.35,
+    "applied_ebitda": 912.0,
+    "multiple_type": "ntm_ev_ebitda"
+  },
+  "comps_outputs": {
+    "ntm_median": 6.35,
+    "ltm_median": 7.449999999999999,
+    "enterprise_value": 5791.2,
+    "equity_value": 5991.2,
+    "implied_share_price": 68.08181818181818
+  },
+  "headline": {
+    "dcf_enterprise_value": 1375.9183090422914,
+    "dcf_equity_value": 1575.9183090422914,
+    "dcf_share_price": 17.90816260275331,
+    "comps_enterprise_value": 5791.2,
+    "comps_equity_value": 5991.2,
+    "comps_share_price": 68.08181818181818
+  }
+}

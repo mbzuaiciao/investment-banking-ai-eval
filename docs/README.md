@@ -30,6 +30,10 @@ This lab is designed for finance professionals, AI researchers, and software eng
 09. Milestone 3B: Controlled Repair Benchmark
        ↓
 10. Experimental Results & Research Synthesis
+       ↓
+11. Milestone 4A: Second Case Design (Meridian SaaS)
+       ↓
+12. Milestone 4B: Meridian Benchmark Implementation
 ```
 
 ---
@@ -74,6 +78,8 @@ uv run ib-eval grade examples/corrupted/c03_cash_subtracted
 | **[08](08_deterministic_feedback_repair.md)** | **[Feedback Repair (M3)](08_deterministic_feedback_repair.md)** | How deterministic grader diagnostics guide models to repair their own errors in one revision. | Invariant feedback; Repair success rate; Diagnostic transitions; Zero gold leakage |
 | **[09](09_controlled_repair_benchmark.md)** | **[Controlled Repair (M3B)](09_controlled_repair_benchmark.md)** | Measuring single-revision repair across 10 controlled failure modes and propagation difficulties. | Controlled starting states; Local vs propagating repairs; Regression tracking |
 | **[10](10_results_and_findings.md)** | **[Results & Findings](10_results_and_findings.md)** | Canonical research synthesis across Milestones 1–3B; reliability layers and empirical insights. | Three reliability layers; Invariant verification; Score vs reliability; Generalization |
+| **[11](11_meridian_case_design.md)** | **[Case Design: Meridian (M4A)](11_meridian_case_design.md)** | Architectural design specification for the second evaluation case (B2B SaaS / Net Cash). | Generalization hypothesis; SaaS accounting; Net cash bridge; Mid-year DCF; Grader reuse |
+| **[12](12_meridian_benchmark.md)** | **[Meridian Benchmark (M4B)](12_meridian_benchmark.md)** | Offline benchmark implementation for Meridian Cloud Systems, accounting mechanics, and validation. | Enterprise SaaS; Mid-year discounting; Net cash bridge; SBC reconciliation; 10 corrupted fixtures |
 
 ---
 

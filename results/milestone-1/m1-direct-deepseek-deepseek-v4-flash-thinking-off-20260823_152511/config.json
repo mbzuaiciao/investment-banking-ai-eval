@@ -1,0 +1,14 @@
+{
+  "experiment_id": "m1-direct-deepseek-deepseek-v4-flash-thinking-off-20260823_152511",
+  "case_id": "meridian-v1",
+  "mode": "direct",
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "runs": 1,
+  "temperature": null,
+  "seed": null,
+  "thinking": false,
+  "reasoning_effort": null,
+  "timestamp": "2026-08-23T15:25:11.313007+00:00",
+  "git_commit": "cca7515ada83ede9a9830ff52c837ebbdf606f76"
+}

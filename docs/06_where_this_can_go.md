@@ -51,10 +51,13 @@ Let's examine the research question for each milestone:
 
 ---
 
-### Milestone 4: Independent Verifier Agent
-- **Architecture**: A separate "Associate / VP" model reviews the candidate analyst's draft submission, checks for common failure modes (cash reversal, capex double-counting, Guidance fabrication), and issues feedback before final grading.
+### Milestone 4: Cross-Case Generalization & Independent Verifier (Design in progress — see [Chapter 11](11_meridian_case_design.md))
+- **Architecture**:
+  1. *Milestone 4A (Design Completed)*: Second synthetic case specification (**Meridian Cloud Systems, Inc.** — B2B SaaS, Net Cash, Mid-Year DCF, Capitalized Software, and SBC).
+  2. *Milestone 4B–4E*: Implementation, baseline execution, structured workflow, and deterministic feedback repair across cases.
+  3. *Independent Verifier Agent*: A separate "Associate / VP" model reviews draft submissions for failure modes before grading.
 - **Core Research Question**:
-  > *"Can a separate language model detect subtle financial and evidentiary errors without access to ground truth?"*
+  > *"Do the structured workflow, deterministic invariants, and repair loops generalize to a fundamentally different financial profile (SaaS / Net Cash) without case-specific architectural tailoring?"*
 
 ---
 

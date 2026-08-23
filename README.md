@@ -555,9 +555,7 @@ uv run ib-eval repair-benchmark \
 
 ## Current limitations
 
-- Milestone 1 and Milestone 2 test single-call completions; Milestones 3 and 3B test single-revision repair loops.
-- Qualitative memo evaluation is out of scope.
-- Only one case (Northstar v1) is currently encoded.
+- Two synthetic cases are currently encoded: **Northstar Components** (`northstar-v1`, industrial manufacturing) and **Meridian Cloud Systems** (`meridian-v1`, enterprise SaaS).
 - No web UI or interactive dashboard.
 
 ---
@@ -569,7 +567,9 @@ uv run ib-eval repair-benchmark \
 - **Milestone 2**: Structured analyst workflow (Completed)
 - **Milestone 3**: Deterministic feedback repair (Completed)
 - **Milestone 3B**: Controlled repair benchmark (Completed)
-- **Milestone 4**: Multi-case generalization & independent verifier models
+- **Milestone 4A**: Second Case Design — Meridian SaaS (Completed)
+- **Milestone 4B**: Meridian Benchmark Implementation & Parameterized Graders (Completed)
+- **Milestone 4C**: Cross-case empirical baseline & repair trials (Live API)
 - **Milestone 5**: Multi-agent verifier loops & iterative collaboration
 - **Milestone 6**: Real-world SEC 10-K extraction & Excel workbook generation
 

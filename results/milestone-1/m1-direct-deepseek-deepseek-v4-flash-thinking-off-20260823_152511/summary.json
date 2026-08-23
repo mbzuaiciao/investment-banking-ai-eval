@@ -1,0 +1,167 @@
+{
+  "experiment_id": "m1-direct-deepseek-deepseek-v4-flash-thinking-off-20260823_152511",
+  "case_id": "meridian-v1",
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "mode": "direct",
+  "requested_runs": 1,
+  "completed_model_calls": 1,
+  "parsed_runs": 1,
+  "parse_failure_count": 0,
+  "parse_success_rate": 1.0,
+  "mean_score": 83.18,
+  "median_score": 83.18,
+  "min_score": 83.18,
+  "max_score": 83.18,
+  "standard_deviation": 0.0,
+  "hard_failure_run_count": 1,
+  "hard_failure_rate": 1.0,
+  "diagnostic_frequency": {
+    "MARGIN_DA_INCONSISTENCY": 5,
+    "SBC_EBITDA_INCONSISTENCY": 5,
+    "FCF_UFCF_ERROR": 5,
+    "REV_ARITHMETIC": 4,
+    "TV_PV_ERROR": 1,
+    "COMPS_MEDIAN_ERROR": 1
+  },
+  "diagnostic_incidence": {
+    "MARGIN_DA_INCONSISTENCY": 1,
+    "SBC_EBITDA_INCONSISTENCY": 1,
+    "FCF_UFCF_ERROR": 1,
+    "REV_ARITHMETIC": 1,
+    "TV_PV_ERROR": 1,
+    "COMPS_MEDIAN_ERROR": 1
+  },
+  "diagnostic_stats": {
+    "MARGIN_DA_INCONSISTENCY": {
+      "diagnostic_code": "MARGIN_DA_INCONSISTENCY",
+      "description": "D&A percentage calculation error",
+      "occurrence_count": 5,
+      "run_count": 1,
+      "run_incidence_rate": 1.0
+    },
+    "SBC_EBITDA_INCONSISTENCY": {
+      "diagnostic_code": "SBC_EBITDA_INCONSISTENCY",
+      "description": "SBC omitted from GAAP EBIT derivation",
+      "occurrence_count": 5,
+      "run_count": 1,
+      "run_incidence_rate": 1.0
+    },
+    "FCF_UFCF_ERROR": {
+      "diagnostic_code": "FCF_UFCF_ERROR",
+      "description": "UFCF formula error",
+      "occurrence_count": 5,
+      "run_count": 1,
+      "run_incidence_rate": 1.0
+    },
+    "REV_ARITHMETIC": {
+      "diagnostic_code": "REV_ARITHMETIC",
+      "description": "Revenue forecast arithmetic error",
+      "occurrence_count": 4,
+      "run_count": 1,
+      "run_incidence_rate": 1.0
+    },
+    "TV_PV_ERROR": {
+      "diagnostic_code": "TV_PV_ERROR",
+      "description": "Terminal value PV discounting error",
+      "occurrence_count": 1,
+      "run_count": 1,
+      "run_incidence_rate": 1.0
+    },
+    "COMPS_MEDIAN_ERROR": {
+      "diagnostic_code": "COMPS_MEDIAN_ERROR",
+      "description": "Comps median calculated incorrectly",
+      "occurrence_count": 1,
+      "run_count": 1,
+      "run_incidence_rate": 1.0
+    }
+  },
+  "failure_category_frequency": {
+    "formula_error": 10,
+    "arithmetic_error": 6,
+    "accounting_inconsistency": 5
+  },
+  "grader_statistics": {
+    "source_fidelity": {
+      "grader_name": "source_fidelity",
+      "mean_score": 15.0,
+      "max_points": 15.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "revenue_forecast": {
+      "grader_name": "revenue_forecast",
+      "mean_score": 1.6,
+      "max_points": 8.0,
+      "pass_rate": 0.0,
+      "failure_count": 1,
+      "zero_score_count": 0
+    },
+    "margin_forecast": {
+      "grader_name": "margin_forecast",
+      "mean_score": 2.33,
+      "max_points": 7.0,
+      "pass_rate": 0.0,
+      "failure_count": 1,
+      "zero_score_count": 0
+    },
+    "free_cash_flow": {
+      "grader_name": "free_cash_flow",
+      "mean_score": 8.0,
+      "max_points": 10.0,
+      "pass_rate": 0.0,
+      "failure_count": 1,
+      "zero_score_count": 0
+    },
+    "wacc": {
+      "grader_name": "wacc",
+      "mean_score": 8.0,
+      "max_points": 8.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "terminal_value": {
+      "grader_name": "terminal_value",
+      "mean_score": 5.25,
+      "max_points": 7.0,
+      "pass_rate": 0.0,
+      "failure_count": 1,
+      "zero_score_count": 0
+    },
+    "enterprise_value": {
+      "grader_name": "enterprise_value",
+      "mean_score": 5.0,
+      "max_points": 5.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "equity_bridge": {
+      "grader_name": "equity_bridge",
+      "mean_score": 10.0,
+      "max_points": 10.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    },
+    "comps": {
+      "grader_name": "comps",
+      "mean_score": 8.0,
+      "max_points": 10.0,
+      "pass_rate": 0.0,
+      "failure_count": 1,
+      "zero_score_count": 0
+    },
+    "consistency": {
+      "grader_name": "consistency",
+      "mean_score": 20.0,
+      "max_points": 20.0,
+      "pass_rate": 1.0,
+      "failure_count": 0,
+      "zero_score_count": 0
+    }
+  },
+  "repair_stats": null
+}
