@@ -46,4 +46,5 @@ results/
 
 | Milestone | Experiment ID | Configuration & Purpose | Headline Metric | Artifact Directory |
 |---|---|---|:---:|---|
-| **Milestone 4C (Direct Baseline)** | `m1-direct-deepseek-deepseek-v4-flash-thinking-off-20260823_152511` | Direct baseline smoke run (1 run) | Score: **83.2** / 100<br>HF Count: **21** | [`results/milestone-1/..._152511`](milestone-1/m1-direct-deepseek-deepseek-v4-flash-thinking-off-20260823_152511) |
+| **Milestone 4C (Thinking Off)** | `m1-direct-deepseek-deepseek-v4-flash-thinking-off-20260823_161149` | Direct prompt; zero reasoning tokens (10 runs) | Parse: **90%** (9/10)<br>Mean: **84.5** / 100<br>HF Rate: **100%** | [`results/meridian-v1/milestone-4c-direct/..._161149`](meridian-v1/milestone-4c-direct/m1-direct-deepseek-deepseek-v4-flash-thinking-off-20260823_161149) |
+| **Milestone 4C (Thinking High)** | `m1-direct-deepseek-deepseek-v4-flash-thinking-high-20260823_162206` | Direct prompt; high reasoning effort (10 runs) | Parse: **100%** (10/10)<br>Mean: **85.5** / 100<br>HF Rate: **100%** | [`results/meridian-v1/milestone-4c-direct/..._162206`](meridian-v1/milestone-4c-direct/m1-direct-deepseek-deepseek-v4-flash-thinking-high-20260823_162206) |

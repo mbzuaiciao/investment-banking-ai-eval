@@ -56,6 +56,19 @@ def extract_json_payload(raw_text: str) -> str:
     return text
 
 
+def classify_parse_error(error_str: str | None) -> str:
+    """Classify parse failure type: json_syntax_error vs structural_schema_error."""
+    if not error_str:
+        return "unknown_error"
+    if (
+        error_str.startswith("JSON parse error")
+        or "Empty response" in error_str
+        or "Expected JSON object" in error_str
+    ):
+        return "json_syntax_error"
+    return "structural_schema_error"
+
+
 def parse_submission_response(raw_text: str) -> tuple[Submission | None, str | None]:
     """Attempt to parse model response into Submission schema.
 
@@ -158,6 +171,7 @@ class DirectAnalyst:
             else:
                 parse_payload = {
                     "status": "parse_failure",
+                    "error_type": classify_parse_error(parse_error),
                     "error": parse_error or "Unknown parse error",
                     "raw_response_preserved": True,
                 }
@@ -266,6 +280,7 @@ class DirectAnalyst:
         if initial_sub is None:
             parse_payload = {
                 "status": "initial_parse_failure",
+                "error_type": classify_parse_error(init_parse_err),
                 "error": init_parse_err or "Unknown initial parse error",
                 "raw_response_preserved": True,
             }
@@ -318,12 +333,6 @@ class DirectAnalyst:
         # CHECK: If initial submission has 0 hard failures, skip repair call
         # ===================================================================
         if len(initial_hf_codes) == 0:
-            (trial_dir / "submission.json").write_text(
-                json.dumps(initial_sub.model_dump(), indent=2)
-            )
-            (trial_dir / "grade.json").write_text(json.dumps(initial_grade.model_dump(), indent=2))
-            (trial_dir / "raw_response.txt").write_text(init_raw_text)
-
             metadata = TrialMetadata(
                 run_index=run_index,
                 provider=config.provider,
@@ -358,18 +367,22 @@ class DirectAnalyst:
                 git_commit=get_git_commit(),
             )
             (trial_dir / "metadata.json").write_text(json.dumps(metadata.__dict__, indent=2))
+            (trial_dir / "submission.json").write_text(
+                json.dumps(initial_sub.model_dump(), indent=2)
+            )
+            (trial_dir / "grade.json").write_text(json.dumps(initial_grade.model_dump(), indent=2))
             return TrialResult(
                 metadata=metadata,
                 raw_response=init_raw_text,
-                submission=initial_sub,
-                grade=initial_grade,
                 initial_raw_response=init_raw_text,
                 initial_submission=initial_sub,
                 initial_grade=initial_grade,
+                submission=initial_sub,
+                grade=initial_grade,
             )
 
         # ===================================================================
-        # CALL 2: Repair Revision Call
+        # CALL 2: Deterministic Feedback Repair Revision
         # ===================================================================
         repair_prompt = build_repair_prompt(case, initial_sub, initial_grade)
         (trial_dir / "repair_prompt.txt").write_text(repair_prompt)
@@ -449,6 +462,7 @@ class DirectAnalyst:
         if repaired_sub is None:
             repair_parse_payload = {
                 "status": "repair_parse_failure",
+                "error_type": classify_parse_error(repair_parse_err),
                 "error": repair_parse_err or "Unknown repair parse error",
                 "raw_response_preserved": True,
             }

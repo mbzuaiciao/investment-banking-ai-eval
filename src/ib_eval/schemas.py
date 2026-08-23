@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Annotated, Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 # ---------------------------------------------------------------------------
 # Enumerations
@@ -100,14 +100,6 @@ class WACCInputs(BaseModel):
     equity_weight: float
     debt_weight: float
 
-    @model_validator(mode="after")
-    def weights_sum_to_one(self) -> WACCInputs:
-        total = round(self.equity_weight + self.debt_weight, 6)
-        if abs(total - 1.0) > 1e-4:
-            msg = f"equity_weight + debt_weight must equal 1.0, got {total}"
-            raise ValueError(msg)
-        return self
-
 
 class WACCOutputs(BaseModel):
     cost_of_equity: float
@@ -163,14 +155,6 @@ class CapitalStructure(BaseModel):
     convertible_treatment: ConvertibleTreatment
     note_convertible: str = ""
 
-    @model_validator(mode="after")
-    def net_debt_reconciles(self) -> CapitalStructure:
-        expected = round(self.gross_debt - self.cash, 4)
-        if abs(expected - self.net_debt) > 0.01:
-            msg = f"net_debt mismatch: gross_debt-cash={expected}, net_debt={self.net_debt}"
-            raise ValueError(msg)
-        return self
-
 
 # ---------------------------------------------------------------------------
 # Equity bridge
@@ -183,28 +167,6 @@ class EquityBridge(BaseModel):
     equity_value: float
     diluted_shares: float
     implied_share_price: float
-
-    @model_validator(mode="after")
-    def equity_value_reconciles(self) -> EquityBridge:
-        expected = round(self.enterprise_value - self.minus_net_debt, 4)
-        if abs(expected - self.equity_value) > 0.1:
-            msg = f"equity_value mismatch: EV-net_debt={expected}, equity_value={self.equity_value}"
-            raise ValueError(msg)
-        return self
-
-    @model_validator(mode="after")
-    def share_price_reconciles(self) -> EquityBridge:
-        if self.diluted_shares <= 0:
-            msg = "diluted_shares must be positive"
-            raise ValueError(msg)
-        expected = round(self.equity_value / self.diluted_shares, 6)
-        if abs(expected - self.implied_share_price) > 0.01:
-            msg = (
-                f"implied_share_price mismatch: equity/shares={expected:.4f}, "
-                f"stated={self.implied_share_price}"
-            )
-            raise ValueError(msg)
-        return self
 
 
 # ---------------------------------------------------------------------------

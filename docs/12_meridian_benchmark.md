@@ -110,7 +110,11 @@ All 10 graders in `src/ib_eval/graders/` evaluate both Northstar and Meridian su
 - **5 / 10 Graders (50.0%) Directly Reused**: `source_fidelity`, `revenue_forecast`, `wacc`, `enterprise_value`, `consistency`.
 - **5 / 10 Graders (50.0%) Parameterized / Extended**: `terminal_value`, `equity_bridge`, `comps`, `margin_forecast`, `free_cash_flow`.
 
+### Design Principle: Parsing vs. Grading Boundary
+- **Parsing Validates Representability**: Structural validation ensures types, enums, and required fields exist without rejecting candidate models for mathematically incorrect inputs.
+- **Graders Validate Financial Correctness**: Deterministic financial rules (WACC weights, equity bridge reconciliation, EBITDA arithmetic) are evaluated by deterministic graders, ensuring that financially erroneous submissions remain gradeable and emit clear diagnostic codes.
+
 Regression testing verifies that:
 1. `uv run ib-eval grade examples/gold_submission/submission.json` $\rightarrow$ **100.0 / 100 (A+)**, 0 hard failures.
 2. `uv run ib-eval grade examples/meridian_gold_submission/submission.json` $\rightarrow$ **100.0 / 100 (A+)**, 0 hard failures.
-3. 181 / 181 unit tests pass in under 2 seconds.
+3. 209 / 209 unit tests pass in under 2 seconds.

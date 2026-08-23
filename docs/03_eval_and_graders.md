@@ -178,6 +178,35 @@ A submission is only considered genuinely passing if it scores high **AND** has 
 
 ---
 
+## 6. Architecture Rule: Parsing vs. Grading Abstraction Boundary
+
+The benchmark enforces a strict separation of concerns between data deserialization and financial evaluation:
+
+> **Design Principle**: *"Parsing validates representability; graders validate financial correctness."*
+
+### Why Financially Wrong Answers Must Parse Successfully
+In an AI evaluation harness, a submission that contains financial errors is precisely what the benchmark is designed to evaluate and diagnose. If the Pydantic schema layer enforces mathematical identities or financial invariants (such as rejecting WACC weights that do not sum to 1.0 or equity bridges where $\text{EV} - \text{Net Debt} \neq \text{Equity Value}$), the evaluation harness rejects the candidate before deterministic graders can execute.
+
+This conflates **model error** with **parser failure**, obscuring the exact failure mode and corrupting reliability metrics:
+
+```text
+┌───────────────────────────────┬───────────────────────────────┐
+│     Structural Invalidity     │     Financial Invalidity      │
+├───────────────────────────────┼───────────────────────────────┤
+│ • Malformed or truncated JSON │ • WACC weights sum to 100%    │
+│ • Missing required fields     │ • EV − Net Debt ≠ Equity Value│
+│ • Invalid data types (None)   │ • EBITDA − D&A ≠ EBIT         │
+│ • Invalid enum values         │ • Net cash subtracted from EV │
+├───────────────────────────────┼───────────────────────────────┤
+│     PARSE FAILURE (0 pts)     │  PARSE SUCCESS + GRADER FAILS │
+│     Taxonomy: Schema/JSON     │  Taxonomy: Diagnostic Codes   │
+└───────────────────────────────┴───────────────────────────────┘
+```
+
+By keeping the schema focused purely on structural types and moving all mathematical and accounting checks into the 10 deterministic graders, candidate submissions remain 100% gradeable and emit explicit diagnostic codes.
+
+---
+
 ## Next Steps
 
 Now let's see these graders in action on real error examples in **[Chapter 04 — Learning from the Corrupted Fixtures](04_failure_modes.md)**.

@@ -296,6 +296,7 @@ run artifacts + aggregate statistics
 2. **Strict parse handling**: If the model output cannot be parsed into the submission schema, it is recorded as a real run failure (`parse_failure`) without automated repair prompts.
 3. **Zero benchmark leakage**: The prompt contains only the case background, source documents, and the output schema. It contains no ground-truth answers, diagnostic codes, tolerances, or scoring hints.
 4. **Repeated independent trials**: Because a single run is insufficient evidence of reliability, the experiment runner executes repeated trials to compute mean score, variance, hard-failure rates, and diagnostic code distributions.
+5. **Parsing vs. grading abstraction boundary**: *Parsing validates representability; deterministic graders validate financial correctness.* Submissions with incorrect financial arithmetic parse successfully so deterministic graders can diagnose and classify the exact failure mode rather than conflating model errors with parser failures.
 
 ### Running the Baseline
 
