@@ -23,8 +23,8 @@ from ib_eval.schemas import (
 
 GRADER_NAME = "consistency"
 
-_ABS_TOL = 0.1      # $0.1mm for EV/equity
-_PRICE_TOL = 0.01   # $0.01 for share price
+_ABS_TOL = 0.1  # $0.1mm for EV/equity
+_PRICE_TOL = 0.01  # $0.01 for share price
 
 
 def grade(submission: Submission, config: GraderConfig) -> GraderResult:

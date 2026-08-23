@@ -111,10 +111,7 @@ def grade_submission(
         summary = f"Score: {total_points:.1f}/{max_points:.0f}. No hard failures."
     else:
         codes = ", ".join(f.diagnostic_code for f in hard_failures[:5])
-        summary = (
-            f"Score: {total_points:.1f}/{max_points:.0f}. "
-            f"{n_hard} hard failure(s): {codes}"
-        )
+        summary = f"Score: {total_points:.1f}/{max_points:.0f}. {n_hard} hard failure(s): {codes}"
 
     return ScoringReport(
         case_id=submission.case_id,

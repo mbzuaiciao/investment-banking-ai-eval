@@ -210,9 +210,7 @@ def generate_controlled_repair_markdown_summary(
     """Deterministically format controlled repair summary into a rich Markdown report."""
     mean_init_str = f"{summary.mean_initial_score:.1f}"
     mean_rep_str = (
-        f"{summary.mean_repaired_score:.1f}"
-        if summary.mean_repaired_score is not None
-        else "N/A"
+        f"{summary.mean_repaired_score:.1f}" if summary.mean_repaired_score is not None else "N/A"
     )
     mean_delta_str = (
         f"{summary.mean_score_delta:+.1f}" if summary.mean_score_delta is not None else "N/A"
@@ -282,14 +280,16 @@ def generate_controlled_repair_markdown_summary(
             f"{outcome_display} |"
         )
 
-    lines.extend([
-        "",
-        "## Error-Category Repair Performance",
-        "",
-        "| Error Category | Fixtures | Target Resolved | Target Resolution % | "
-        "Full Clean Success | Clean Success % |",
-        "|---|---:|---:|---:|---:|---:|",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Error-Category Repair Performance",
+            "",
+            "| Error Category | Fixtures | Target Resolved | Target Resolution % | "
+            "Full Clean Success | Clean Success % |",
+            "|---|---:|---:|---:|---:|---:|",
+        ]
+    )
 
     for cat, c_stat in summary.category_statistics.items():
         lines.append(
@@ -298,13 +298,15 @@ def generate_controlled_repair_markdown_summary(
             f"{c_stat.success_rate:.1%} |"
         )
 
-    lines.extend([
-        "",
-        "## Difficulty Analysis (Local vs. Propagating Repairs)",
-        "",
-        "| Difficulty | Description | Fixtures | Target Resolution % | Clean Success % |",
-        "|---|---|---:|---:|---:|",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Difficulty Analysis (Local vs. Propagating Repairs)",
+            "",
+            "| Difficulty | Description | Fixtures | Target Resolution % | Clean Success % |",
+            "|---|---|---:|---:|---:|",
+        ]
+    )
 
     for diff, d_stat in summary.difficulty_statistics.items():
         desc = (
@@ -318,14 +320,16 @@ def generate_controlled_repair_markdown_summary(
         )
 
     # Diagnostic Transitions & New Errors
-    lines.extend([
-        "",
-        "## Diagnostic Transitions & Regression Invariant Auditing",
-        "",
-        "| Fixture ID | Target Diagnostic | Resolved? | Persistent Codes | "
-        "Newly Introduced Codes |",
-        "|:---:|---|:---:|---|---|",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Diagnostic Transitions & Regression Invariant Auditing",
+            "",
+            "| Fixture ID | Target Diagnostic | Resolved? | Persistent Codes | "
+            "Newly Introduced Codes |",
+            "|:---:|---|:---:|---|---|",
+        ]
+    )
 
     for t in summary.fixture_results:
         res_flag = "Yes" if t.expected_diagnostic_resolved else "No"
@@ -334,11 +338,7 @@ def generate_controlled_repair_markdown_summary(
             if t.persistent_diagnostics
             else "—"
         )
-        new_str = (
-            ", ".join(f"`{c}`" for c in t.new_diagnostics)
-            if t.new_diagnostics
-            else "—"
-        )
+        new_str = ", ".join(f"`{c}`" for c in t.new_diagnostics) if t.new_diagnostics else "—"
         lines.append(
             f"| `{t.fixture_id}` | `{t.expected_diagnostic}` | {res_flag} | "
             f"{pers_str} | {new_str} |"

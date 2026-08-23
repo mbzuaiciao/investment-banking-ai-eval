@@ -53,6 +53,14 @@ DIAGNOSTIC_DESCRIPTIONS: dict[str, str] = {
     "CONSISTENCY_HEADLINE_COMPS": "Headline comps values do not match model",
     "CONSISTENCY_EV_BRIDGE": "Equity bridge EV differs from DCF EV",
     "CONSISTENCY_SHARES": "Diluted shares inconsistent across sections",
+    "REV_ARR_CONFUSION": "Ending ARR confused with base GAAP revenue",
+    "SBC_EBITDA_INCONSISTENCY": "SBC omitted from GAAP EBIT derivation",
+    "FCF_SOFTWARE_DOUBLE_COUNTED": "Capitalized software double counted in capex",
+    "WC_DEFERRED_REV_REVERSED": "Deferred revenue working capital sign reversed",
+    "DCF_MIDYEAR_CONVENTION_ERROR": "DCF mid-year timing convention error",
+    "EQ_BRIDGE_NET_CASH_REVERSED": "Net cash subtracted from EV instead of added",
+    "SHARES_BASIC_USED": "Basic common shares used instead of fully diluted shares",
+    "COMPS_NM_FCF_COERCED_ZERO": "N/M negative FCF peer multiple coerced to zero in median",
 }
 
 
@@ -194,9 +202,7 @@ def compute_aggregate_statistics(
         t for t in parsed_trials if t.grade is not None and len(t.grade.hard_failures) > 0
     ]
     hard_failure_run_count = len(hard_failure_runs)
-    hard_failure_rate = (
-        round(hard_failure_run_count / parsed_count, 4) if parsed_count > 0 else 0.0
-    )
+    hard_failure_rate = round(hard_failure_run_count / parsed_count, 4) if parsed_count > 0 else 0.0
 
     # Diagnostic occurrence counts & run incidence counts
     occurrence_counts: dict[str, int] = {}
@@ -290,9 +296,7 @@ def compute_aggregate_statistics(
         init_mean_score = round(statistics.mean(init_scores), 2) if init_scores else None
         init_median_score = round(statistics.median(init_scores), 2) if init_scores else None
 
-        init_hf_runs = [
-            t for t in init_parsed_trials if t.metadata.initial_hard_failure_count > 0
-        ]
+        init_hf_runs = [t for t in init_parsed_trials if t.metadata.initial_hard_failure_count > 0]
         init_hf_count = len(init_hf_runs)
         init_hf_rate = (
             round(init_hf_count / len(init_parsed_trials), 4) if init_parsed_trials else 0.0
@@ -487,39 +491,46 @@ def generate_markdown_summary(
             f"{rs.initially_failing_runs_count} runs"
         )
         init_hf_desc = (
-            f"{rs.initial_hard_failure_rate:.1%} "
-            f"({rs.initial_hard_failure_run_count} runs)"
+            f"{rs.initial_hard_failure_rate:.1%} ({rs.initial_hard_failure_run_count} runs)"
         )
         rep_hf_desc = (
-            f"{rs.repaired_hard_failure_rate:.1%} "
-            f"({rs.repaired_hard_failure_run_count} runs)"
+            f"{rs.repaired_hard_failure_rate:.1%} ({rs.repaired_hard_failure_run_count} runs)"
         )
-        hf_delta_desc = (
-            f"{(rs.repaired_hard_failure_rate - rs.initial_hard_failure_rate):+.1%}"
-        )
+        hf_delta_desc = f"{(rs.repaired_hard_failure_rate - rs.initial_hard_failure_rate):+.1%}"
 
-        lines.extend([
-            "## Repair Performance Summary",
-            "",
-            "| Metric | Initial | Repaired / Final | Delta |",
-            "|---|---:|---:|---:|",
-            f"| **Mean Score** | {init_m} / 100 | {rep_m} / 100 | {rs.mean_score_delta:+.1f} |",
-            f"| **Hard-Failure Rate** | {init_hf_desc} | {rep_hf_desc} | {hf_delta_desc} |",
-            f"| **Repair Success Rate** | — | **{succ_rate_pct}** ({succ_str}) | — |",
-            "",
-            "### Repair Effectiveness",
-            f"- **Trials Improved**: {rs.trials_improved_count} ({rs.trials_improved_pct:.1%})",
-            f"- **Trials Unchanged**: {rs.trials_unchanged_count} ({rs.trials_unchanged_pct:.1%})",
-            f"- **Trials Worsened**: {rs.trials_worsened_count} ({rs.trials_worsened_pct:.1%})",
-            f"- **Diagnostics Resolved**: {rs.total_diagnostics_resolved}",
-            f"- **Diagnostics Persistent**: {rs.total_diagnostics_persistent}",
-            f"- **Diagnostics Newly Introduced**: {rs.total_diagnostics_introduced}",
-            "",
-            "## Individual Run Breakdown",
-            "",
-            "| Run | Initial | Repaired | Δ Score | Init HF | Rep HF | Result | Latency |",
-            "|---|---:|---:|---:|:---:|:---:|---|---:|",
-        ])
+        lines.extend(
+            [
+                "## Repair Performance Summary",
+                "",
+                "| Metric | Initial | Repaired / Final | Delta |",
+                "|---|---:|---:|---:|",
+                f"| **Mean Score** | {init_m} / 100 | {rep_m} / 100 | {rs.mean_score_delta:+.1f} |",
+                f"| **Hard-Failure Rate** | {init_hf_desc} | {rep_hf_desc} | {hf_delta_desc} |",
+                f"| **Repair Success Rate** | — | **{succ_rate_pct}** ({succ_str}) | — |",
+                "",
+                "### Repair Effectiveness",
+                (
+                    f"- **Trials Improved**: {rs.trials_improved_count} "
+                    f"({rs.trials_improved_pct:.1%})"
+                ),
+                (
+                    f"- **Trials Unchanged**: {rs.trials_unchanged_count} "
+                    f"({rs.trials_unchanged_pct:.1%})"
+                ),
+                (
+                    f"- **Trials Worsened**: {rs.trials_worsened_count} "
+                    f"({rs.trials_worsened_pct:.1%})"
+                ),
+                f"- **Diagnostics Resolved**: {rs.total_diagnostics_resolved}",
+                f"- **Diagnostics Persistent**: {rs.total_diagnostics_persistent}",
+                f"- **Diagnostics Newly Introduced**: {rs.total_diagnostics_introduced}",
+                "",
+                "## Individual Run Breakdown",
+                "",
+                "| Run | Initial | Repaired | Δ Score | Init HF | Rep HF | Result | Latency |",
+                "|---|---:|---:|---:|:---:|:---:|---|---:|",
+            ]
+        )
 
         for t in trial_results:
             m = t.metadata
@@ -550,14 +561,16 @@ def generate_markdown_summary(
             )
 
         # Diagnostic Transitions Table
-        lines.extend([
-            "",
-            "## Diagnostic Transition Analysis",
-            "",
-            "| Diagnostic Code | Description | Init Runs | Rep Runs | "
-            "Resolved | Persistent | New |",
-            "|---|---|---:|---:|---:|---:|---:|",
-        ])
+        lines.extend(
+            [
+                "",
+                "## Diagnostic Transition Analysis",
+                "",
+                "| Diagnostic Code | Description | Init Runs | Rep Runs | "
+                "Resolved | Persistent | New |",
+                "|---|---|---:|---:|---:|---:|---:|",
+            ]
+        )
 
         if rs.diagnostic_transitions:
             for code, tr in rs.diagnostic_transitions.items():
@@ -571,23 +584,25 @@ def generate_markdown_summary(
 
     else:
         # Standard summary table for direct and structured modes
-        lines.extend([
-            "## Summary Statistics",
-            "",
-            "| Metric | Value |",
-            "|---|---|",
-            f"| **Mean Score** | {mean_str} / 100 |",
-            f"| **Median Score** | {median_str} / 100 |",
-            f"| **Min / Max Score** | {min_str} / {max_str} |",
-            f"| **Std Deviation** | {stdev_str} |",
-            f"| **Hard-Failure Rate** | {hard_rate_pct} "
-            f"({summary.hard_failure_run_count}/{summary.parsed_runs} runs) |",
-            "",
-            "## Individual Run Breakdown",
-            "",
-            "| Run | Score | Grade | Hard Failures | Parse Status | Latency |",
-            "|---|---:|:---:|:---:|:---:|---:|",
-        ])
+        lines.extend(
+            [
+                "## Summary Statistics",
+                "",
+                "| Metric | Value |",
+                "|---|---|",
+                f"| **Mean Score** | {mean_str} / 100 |",
+                f"| **Median Score** | {median_str} / 100 |",
+                f"| **Min / Max Score** | {min_str} / {max_str} |",
+                f"| **Std Deviation** | {stdev_str} |",
+                f"| **Hard-Failure Rate** | {hard_rate_pct} "
+                f"({summary.hard_failure_run_count}/{summary.parsed_runs} runs) |",
+                "",
+                "## Individual Run Breakdown",
+                "",
+                "| Run | Score | Grade | Hard Failures | Parse Status | Latency |",
+                "|---|---:|:---:|:---:|:---:|---:|",
+            ]
+        )
 
         for t in trial_results:
             m = t.metadata
@@ -601,13 +616,15 @@ def generate_markdown_summary(
                 f"{hard_str} | {status_str} | {latency_str} |"
             )
 
-        lines.extend([
-            "",
-            "## Failure Frequency Analysis",
-            "",
-            "| Diagnostic Code | Description | Occurrences | Run Incidence | Run % |",
-            "|---|---|---:|---:|---:|",
-        ])
+        lines.extend(
+            [
+                "",
+                "## Failure Frequency Analysis",
+                "",
+                "| Diagnostic Code | Description | Occurrences | Run Incidence | Run % |",
+                "|---|---|---:|---:|---:|",
+            ]
+        )
 
         if summary.diagnostic_stats:
             for code, stat in summary.diagnostic_stats.items():
@@ -620,13 +637,15 @@ def generate_markdown_summary(
         else:
             lines.append("| *(none)* | No diagnostic failures recorded | 0 | 0 / 0 runs | 0.0% |")
 
-    lines.extend([
-        "",
-        "## Failure Categories",
-        "",
-        "| Error Category | Occurrences |",
-        "|---|---:|",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Failure Categories",
+            "",
+            "| Error Category | Occurrences |",
+            "|---|---:|",
+        ]
+    )
 
     if summary.failure_category_frequency:
         for cat, count in summary.failure_category_frequency.items():
@@ -634,13 +653,15 @@ def generate_markdown_summary(
     else:
         lines.append("| *(none)* | 0 |")
 
-    lines.extend([
-        "",
-        "## Grader Performance Breakdown",
-        "",
-        "| Grader | Mean Score | Max Points | Pass Rate | Failures | Zero Scores |",
-        "|---|---:|---:|---:|---:|---:|",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Grader Performance Breakdown",
+            "",
+            "| Grader | Mean Score | Max Points | Pass Rate | Failures | Zero Scores |",
+            "|---|---:|---:|---:|---:|---:|",
+        ]
+    )
 
     if summary.grader_statistics:
         for g_name, g_stat in summary.grader_statistics.items():
@@ -689,53 +710,66 @@ def compare_experiments(exp_a: ExperimentSummary, exp_b: ExperimentSummary) -> s
         sign = "+" if diff > 0 else ""
         return f"{sign}{diff:.1%}"
 
-    lines.extend([
-        f"| **Mean Score** | {fmt_score(exp_a.mean_score)} | {fmt_score(exp_b.mean_score)} | "
-        f"{fmt_delta(exp_a.mean_score, exp_b.mean_score)} |",
-        f"| **Median Score** | {fmt_score(exp_a.median_score)} | {fmt_score(exp_b.median_score)} | "
-        f"{fmt_delta(exp_a.median_score, exp_b.median_score)} |",
-        f"| **Std Deviation** | {fmt_score(exp_a.standard_deviation)} | "
-        f"{fmt_score(exp_b.standard_deviation)} | "
-        f"{fmt_delta(exp_a.standard_deviation, exp_b.standard_deviation)} |",
-        f"| **Parse Success Rate** | {exp_a.parse_success_rate:.1%} | "
-        f"{exp_b.parse_success_rate:.1%} | "
-        f"{fmt_pct_delta(exp_a.parse_success_rate, exp_b.parse_success_rate)} |",
-        f"| **Hard-Failure Rate** | {exp_a.hard_failure_rate:.1%} | "
-        f"{exp_b.hard_failure_rate:.1%} | "
-        f"{fmt_pct_delta(exp_a.hard_failure_rate, exp_b.hard_failure_rate)} |",
-    ])
+    lines.extend(
+        [
+            f"| **Mean Score** | {fmt_score(exp_a.mean_score)} | {fmt_score(exp_b.mean_score)} | "
+            f"{fmt_delta(exp_a.mean_score, exp_b.mean_score)} |",
+            (
+                f"| **Median Score** | {fmt_score(exp_a.median_score)} | "
+                f"{fmt_score(exp_b.median_score)} | "
+                f"{fmt_delta(exp_a.median_score, exp_b.median_score)} |"
+            ),
+            f"| **Std Deviation** | {fmt_score(exp_a.standard_deviation)} | "
+            f"{fmt_score(exp_b.standard_deviation)} | "
+            f"{fmt_delta(exp_a.standard_deviation, exp_b.standard_deviation)} |",
+            f"| **Parse Success Rate** | {exp_a.parse_success_rate:.1%} | "
+            f"{exp_b.parse_success_rate:.1%} | "
+            f"{fmt_pct_delta(exp_a.parse_success_rate, exp_b.parse_success_rate)} |",
+            f"| **Hard-Failure Rate** | {exp_a.hard_failure_rate:.1%} | "
+            f"{exp_b.hard_failure_rate:.1%} | "
+            f"{fmt_pct_delta(exp_a.hard_failure_rate, exp_b.hard_failure_rate)} |",
+        ]
+    )
 
     # If Experiment B is a repair run, report repair effectiveness
     if exp_b.repair_stats is not None:
         rs_b = exp_b.repair_stats
-        lines.extend([
-            "",
-            "## Repair Effectiveness (Experiment B)",
-            "",
-            f"- **Repair Success Rate**: **{rs_b.repair_success_rate:.1%}** "
-            f"({rs_b.initially_failing_runs_repaired_to_zero_hf}/"
-            f"{rs_b.initially_failing_runs_count} initially failing runs)",
-            f"- **Trials Improved**: {rs_b.trials_improved_count} ({rs_b.trials_improved_pct:.1%})",
-            f"- **Trials Unchanged**: {rs_b.trials_unchanged_count} "
-            f"({rs_b.trials_unchanged_pct:.1%})",
-            f"- **Trials Worsened**: {rs_b.trials_worsened_count} ({rs_b.trials_worsened_pct:.1%})",
-            f"- **Diagnostics Resolved**: {rs_b.total_diagnostics_resolved}",
-            f"- **Diagnostics Persistent**: {rs_b.total_diagnostics_persistent}",
-            f"- **Diagnostics Introduced**: {rs_b.total_diagnostics_introduced}",
-        ])
+        lines.extend(
+            [
+                "",
+                "## Repair Effectiveness (Experiment B)",
+                "",
+                f"- **Repair Success Rate**: **{rs_b.repair_success_rate:.1%}** "
+                f"({rs_b.initially_failing_runs_repaired_to_zero_hf}/"
+                f"{rs_b.initially_failing_runs_count} initially failing runs)",
+                (
+                    f"- **Trials Improved**: {rs_b.trials_improved_count} "
+                    f"({rs_b.trials_improved_pct:.1%})"
+                ),
+                f"- **Trials Unchanged**: {rs_b.trials_unchanged_count} "
+                f"({rs_b.trials_unchanged_pct:.1%})",
+                (
+                    f"- **Trials Worsened**: {rs_b.trials_worsened_count} "
+                    f"({rs_b.trials_worsened_pct:.1%})"
+                ),
+                f"- **Diagnostics Resolved**: {rs_b.total_diagnostics_resolved}",
+                f"- **Diagnostics Persistent**: {rs_b.total_diagnostics_persistent}",
+                f"- **Diagnostics Introduced**: {rs_b.total_diagnostics_introduced}",
+            ]
+        )
 
     # Key Diagnostic Run Incidence Comparison
-    all_diag_codes = sorted(
-        set(exp_a.diagnostic_stats.keys()) | set(exp_b.diagnostic_stats.keys())
-    )
+    all_diag_codes = sorted(set(exp_a.diagnostic_stats.keys()) | set(exp_b.diagnostic_stats.keys()))
 
-    lines.extend([
-        "",
-        "## Key Diagnostic Run-Level Incidence",
-        "",
-        "| Diagnostic Code | Description | Exp A Run % | Exp B Run % | Incidence Delta |",
-        "|---|---|---:|---:|---:|",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Key Diagnostic Run-Level Incidence",
+            "",
+            "| Diagnostic Code | Description | Exp A Run % | Exp B Run % | Incidence Delta |",
+            "|---|---|---:|---:|---:|",
+        ]
+    )
 
     if all_diag_codes:
         for code in all_diag_codes:
@@ -757,16 +791,16 @@ def compare_experiments(exp_a: ExperimentSummary, exp_b: ExperimentSummary) -> s
         lines.append("| *(none)* | No diagnostics recorded | 0.0% | 0.0% | 0.0% |")
 
     # Grader Pass Rate Comparison
-    all_graders = sorted(
-        set(exp_a.grader_statistics.keys()) | set(exp_b.grader_statistics.keys())
+    all_graders = sorted(set(exp_a.grader_statistics.keys()) | set(exp_b.grader_statistics.keys()))
+    lines.extend(
+        [
+            "",
+            "## Grader Pass Rate Comparison",
+            "",
+            "| Grader | Exp A Pass Rate | Exp B Pass Rate | Delta |",
+            "|---|---:|---:|---:|",
+        ]
     )
-    lines.extend([
-        "",
-        "## Grader Pass Rate Comparison",
-        "",
-        "| Grader | Exp A Pass Rate | Exp B Pass Rate | Delta |",
-        "|---|---:|---:|---:|",
-    ])
 
     for g in all_graders:
         g_a = exp_a.grader_statistics.get(g)

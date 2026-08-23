@@ -36,10 +36,7 @@ def case() -> NorthstarCase:
 @pytest.fixture
 def gold_submission() -> Submission:
     gold_path = (
-        Path(__file__).resolve().parent.parent
-        / "examples"
-        / "gold_submission"
-        / "submission.json"
+        Path(__file__).resolve().parent.parent / "examples" / "gold_submission" / "submission.json"
     )
     return Submission.model_validate_json(gold_path.read_text())
 
@@ -72,9 +69,7 @@ def test_benchmark_drift_protection(case: NorthstarCase) -> None:
     for fixture in CONTROLLED_FIXTURES:
         sub = fixture.load_submission(_CORRUPTED_DIR)
         grade_report = grade_submission(sub, case)
-        emitted_codes = [
-            f.diagnostic_code for r in grade_report.grader_results for f in r.failures
-        ]
+        emitted_codes = [f.diagnostic_code for r in grade_report.grader_results for f in r.failures]
         assert fixture.expected_diagnostic in emitted_codes, (
             f"Fixture {fixture.fixture_id} did not emit expected "
             f"diagnostic {fixture.expected_diagnostic}"
@@ -90,9 +85,7 @@ def test_benchmark_drift_error_raised_on_mismatch(
     # Create a mock fixture expecting an error, but pointing to gold submission (clean)
     bad_fixture_dir = tmp_path / "bad_fixture"
     bad_fixture_dir.mkdir()
-    (bad_fixture_dir / "submission.json").write_text(
-        json.dumps(gold_submission.model_dump())
-    )
+    (bad_fixture_dir / "submission.json").write_text(json.dumps(gold_submission.model_dump()))
 
     bad_fixture = ControlledFixture(
         fixture_id="bad",

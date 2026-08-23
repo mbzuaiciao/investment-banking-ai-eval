@@ -60,9 +60,7 @@ def test_cli_grade_corrupted_exits_nonzero(runner: CliRunner) -> None:
     for d in _CORRUPTED_DIR.iterdir():
         if d.is_dir() and (d / "submission.json").exists():
             result = runner.invoke(main, ["grade", str(d)])
-            assert result.exit_code != 0, (
-                f"Expected non-zero exit for {d.name}, got 0"
-            )
+            assert result.exit_code != 0, f"Expected non-zero exit for {d.name}, got 0"
             break  # Test one is sufficient for the basic CLI test
 
 

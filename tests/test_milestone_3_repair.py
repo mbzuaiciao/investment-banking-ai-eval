@@ -34,10 +34,7 @@ def case() -> NorthstarCase:
 @pytest.fixture
 def gold_submission() -> Submission:
     gold_path = (
-        Path(__file__).resolve().parent.parent
-        / "examples"
-        / "gold_submission"
-        / "submission.json"
+        Path(__file__).resolve().parent.parent / "examples" / "gold_submission" / "submission.json"
     )
     return Submission.model_validate_json(gold_path.read_text())
 

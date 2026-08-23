@@ -34,7 +34,7 @@ def test_extract_json_payload_raw() -> None:
 
 def test_extract_json_payload_with_code_fences() -> None:
     """Extract JSON enclosed in markdown code fences."""
-    raw = "```json\n{\n  \"key\": \"value\"\n}\n```"
+    raw = '```json\n{\n  "key": "value"\n}\n```'
     assert extract_json_payload(raw) == '{\n  "key": "value"\n}'
 
 

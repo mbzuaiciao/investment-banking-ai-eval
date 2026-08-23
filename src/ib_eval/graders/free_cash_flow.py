@@ -36,16 +36,21 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
     warnings: list[str] = []
     info: list[str] = []
 
+    tax_rate = float(config.params.get("tax_rate", _TAX_RATE))
+    capex_pct = float(config.params.get("capex_pct", _CAPEX_PCT))
+    nwc_pct = float(config.params.get("nwc_pct", _NWC_PCT))
+    prev_nwc_base = float(config.params.get("prev_nwc", _PREV_NWC_2025))
+
     sorted_years = sorted(submission.forecast, key=lambda x: x.year)
     prev_nwc: dict[int, float] = {}
-    prev_nwc[sorted_years[0].year - 1] = _PREV_NWC_2025
+    prev_nwc[sorted_years[0].year - 1] = prev_nwc_base
 
     for fy in sorted_years:
         year = fy.year
-        prev = prev_nwc.get(year - 1, _PREV_NWC_2025)
+        prev = prev_nwc.get(year - 1, prev_nwc_base)
 
         # 1. NOPAT = EBIT × (1 − tax)
-        expected_nopat = fy.ebit * (1.0 - _TAX_RATE)
+        expected_nopat = fy.ebit * (1.0 - tax_rate)
         if abs(expected_nopat - fy.nopat) > tol:
             failures.append(
                 GraderFailure(
@@ -55,18 +60,26 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
                     expected=expected_nopat,
                     observed=fy.nopat,
                     message=(
-                        f"NOPAT = EBIT × (1 − {_TAX_RATE}): "
-                        f"{fy.ebit} × {1 - _TAX_RATE} = {expected_nopat:.4f} ≠ {fy.nopat}"
+                        f"NOPAT = EBIT × (1 − {tax_rate}): "
+                        f"{fy.ebit} × {1 - tax_rate} = {expected_nopat:.4f} ≠ {fy.nopat}"
                     ),
                     diagnostic_code="FCF_NOPAT_ERROR",
                 )
             )
 
-        # 2. Capex = 4.5% of revenue
-        expected_capex = fy.revenue * _CAPEX_PCT
+        # 2. Capex = capex_pct of revenue
+        expected_capex = fy.revenue * capex_pct
         if abs(expected_capex - fy.capex) > tol:
             # Check if capex is double the expected (double-counting)
-            if abs(fy.capex - 2 * expected_capex) < tol * 2:
+            if (
+                abs(fy.capex - 2 * expected_capex) < tol * 2
+                or abs(fy.capex - (expected_capex + fy.revenue * 0.035)) < tol
+            ):
+                diag_code = (
+                    "FCF_SOFTWARE_DOUBLE_COUNTED"
+                    if "software_capex_pct" in config.params
+                    else "FCF_CAPEX_DOUBLE_COUNTED"
+                )
                 failures.append(
                     GraderFailure(
                         error_type=ErrorType.ACCOUNTING,
@@ -76,9 +89,9 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
                         observed=fy.capex,
                         message=(
                             f"Capex appears double-counted: submitted {fy.capex:.4f}, "
-                            f"expected {expected_capex:.4f} ({_CAPEX_PCT:.1%} of revenue)."
+                            f"expected {expected_capex:.4f} ({capex_pct:.1%} of revenue)."
                         ),
-                        diagnostic_code="FCF_CAPEX_DOUBLE_COUNTED",
+                        diagnostic_code=diag_code,
                     )
                 )
             else:
@@ -90,38 +103,56 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
                         expected=expected_capex,
                         observed=fy.capex,
                         message=(
-                            f"Capex should be {_CAPEX_PCT:.1%} of revenue: "
-                            f"{fy.revenue} × {_CAPEX_PCT} = {expected_capex:.4f} ≠ {fy.capex}"
+                            f"Capex should be {capex_pct:.1%} of revenue: "
+                            f"{fy.revenue} × {capex_pct} = {expected_capex:.4f} ≠ {fy.capex}"
                         ),
                         diagnostic_code="FCF_CAPEX_ERROR",
                     )
                 )
 
-        # 3. NWC = 12.0% of revenue
-        expected_nwc = fy.revenue * _NWC_PCT
+        # 3. NWC = nwc_pct of revenue
+        expected_nwc = fy.revenue * nwc_pct
         if abs(expected_nwc - fy.nwc) > tol:
             warnings.append(
-                f"nwc/{year}E: expected {expected_nwc:.4f} ({_NWC_PCT:.1%} of revenue), "
+                f"nwc/{year}E: expected {expected_nwc:.4f} ({nwc_pct:.1%} of revenue), "
                 f"got {fy.nwc:.4f}"
             )
 
         # 4. ΔNWC = NWC_t − NWC_{t-1}
         expected_delta_nwc = fy.nwc - prev
         if abs(expected_delta_nwc - fy.delta_nwc) > tol:
-            failures.append(
-                GraderFailure(
-                    error_type=ErrorType.ARITHMETIC,
-                    severity=Severity.CRITICAL,
-                    metric=f"delta_nwc/{year}E",
-                    expected=expected_delta_nwc,
-                    observed=fy.delta_nwc,
-                    message=(
-                        f"ΔNWC = NWC_t − NWC_{{t-1}}: {fy.nwc:.4f} − {prev:.4f} "
-                        f"= {expected_delta_nwc:.4f} ≠ {fy.delta_nwc}"
-                    ),
-                    diagnostic_code="FCF_NWC_DELTA_ERROR",
+            # Check if sign was reversed on negative NWC / deferred revenue
+            if abs(fy.delta_nwc + expected_delta_nwc) < tol * 2 and expected_delta_nwc < 0:
+                failures.append(
+                    GraderFailure(
+                        error_type=ErrorType.ACCOUNTING,
+                        severity=Severity.CRITICAL,
+                        metric=f"delta_nwc/{year}E",
+                        expected=expected_delta_nwc,
+                        observed=fy.delta_nwc,
+                        message=(
+                            "Deferred revenue / working capital sign reversed: growth in "
+                            f"contract liabilities is a cash inflow. "
+                            f"Expected ΔNWC = {expected_delta_nwc:.4f}, got {fy.delta_nwc:.4f}."
+                        ),
+                        diagnostic_code="WC_DEFERRED_REV_REVERSED",
+                    )
                 )
-            )
+            else:
+                failures.append(
+                    GraderFailure(
+                        error_type=ErrorType.ARITHMETIC,
+                        severity=Severity.CRITICAL,
+                        metric=f"delta_nwc/{year}E",
+                        expected=expected_delta_nwc,
+                        observed=fy.delta_nwc,
+                        message=(
+                            f"ΔNWC = NWC_t − NWC_{{t-1}}: {fy.nwc:.4f} − {prev:.4f} "
+                            f"= {expected_delta_nwc:.4f} ≠ {fy.delta_nwc}"
+                        ),
+                        diagnostic_code="FCF_NWC_DELTA_ERROR",
+                    )
+                )
 
         # 5. UFCF = NOPAT + D&A − Capex − ΔNWC
         expected_ufcf = fy.nopat + fy.da - fy.capex - fy.delta_nwc

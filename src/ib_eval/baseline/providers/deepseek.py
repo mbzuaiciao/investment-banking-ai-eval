@@ -48,9 +48,7 @@ class DeepSeekAnalyst(Analyst):
             raise ValueError(msg)
 
         effective_base_url = (
-            base_url
-            or os.environ.get("DEEPSEEK_BASE_URL")
-            or _DEFAULT_DEEPSEEK_BASE_URL
+            base_url or os.environ.get("DEEPSEEK_BASE_URL") or _DEFAULT_DEEPSEEK_BASE_URL
         )
 
         self.client = OpenAI(

@@ -53,33 +53,39 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
     co = submission.comps_outputs
     cs = submission.capital_structure
 
-    # 1. Check Evergreen is NOT coerced to zero in the NTM multiples
-    evergreen_peers = [p for p in ci.peers if p.name == _EVERGREEN_NAME]
-    if evergreen_peers:
-        ep = evergreen_peers[0]
-        # If Evergreen has ntm_ev_ebitda = 0, that is a hard failure
+    nm_peer_name = str(config.params.get("nm_peer_name", _EVERGREEN_NAME))
+    gold_median = float(config.params.get("gold_median_ntm", _GOLD_MEDIAN_NTM))
+    is_meridian = "strata" in nm_peer_name.lower()
+
+    # 1. Check N/M peer is NOT coerced to zero in the NTM multiples
+    nm_peers = [p for p in ci.peers if p.name == nm_peer_name]
+    if nm_peers:
+        ep = nm_peers[0]
+        # If N/M peer has multiple = 0, that is a hard failure
         if ep.ntm_ev_ebitda == 0.0 or ep.ltm_ev_ebitda == 0.0:
+            diag_code = "COMPS_NM_FCF_COERCED_ZERO" if is_meridian else "COMPS_NM_COERCED_ZERO"
             failures.append(
                 GraderFailure(
                     error_type=ErrorType.VALUATION,
                     severity=Severity.CRITICAL,
-                    metric="comps.evergreen_ntm",
+                    metric=f"comps.{nm_peer_name.lower().replace(' ', '_')}_ntm",
                     expected="None (N/M)",
                     observed=0.0,
                     message=(
-                        f"{_EVERGREEN_NAME} has negative EBITDA and should be marked N/M "
+                        f"{nm_peer_name} has negative cash flow / EBITDA and should be marked N/M "
                         "(None), not coerced to zero."
                     ),
-                    diagnostic_code="COMPS_NM_COERCED_ZERO",
+                    diagnostic_code=diag_code,
                 )
             )
         elif ep.ntm_ev_ebitda is None and not ep.excluded:
             # Good — it's N/M and should be excluded from median
-            info.append(f"{_EVERGREEN_NAME}: correctly marked N/M.")
+            info.append(f"{nm_peer_name}: correctly marked N/M.")
     else:
-        warnings.append(f"{_EVERGREEN_NAME} not found in submission peers.")
+        if not is_meridian:
+            warnings.append(f"{nm_peer_name} not found in submission peers.")
 
-    # 2. Check Crestline fiscal-year mismatch is surfaced
+    # 2. Check Crestline fiscal-year mismatch is surfaced (Northstar specific)
     crestline_peers = [p for p in ci.peers if p.name == _CRESTLINE_NAME]
     if crestline_peers:
         cp = crestline_peers[0]
@@ -110,7 +116,7 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
                 error_type=ErrorType.VALUATION,
                 severity=Severity.CRITICAL,
                 metric="comps.ntm_median",
-                expected=_GOLD_MEDIAN_NTM,
+                expected=gold_median,
                 observed=None,
                 message="No valid NTM peers found — cannot compute median.",
                 diagnostic_code="COMPS_MEDIAN_ERROR",
@@ -134,23 +140,40 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
                 )
             )
 
-    # 4. Comps EV = applied_multiple × applied_ebitda
-    expected_ev = ci.applied_multiple * ci.applied_ebitda
-    if abs(expected_ev - co.enterprise_value) > _ABS_TOL:
-        failures.append(
-            GraderFailure(
-                error_type=ErrorType.ARITHMETIC,
-                severity=Severity.CRITICAL,
-                metric="comps.enterprise_value",
-                expected=expected_ev,
-                observed=co.enterprise_value,
-                message=(
-                    f"Comps EV = multiple × EBITDA: {ci.applied_multiple} × "
-                    f"{ci.applied_ebitda} = {expected_ev:.4f} ≠ {co.enterprise_value:.4f}"
-                ),
-                diagnostic_code="COMPS_EV_ARITHMETIC",
+    # 4. Comps EV = applied_multiple × applied metric
+    applied_metric_val = (
+        ci.applied_metric_value if ci.applied_metric_value is not None else ci.applied_ebitda
+    )
+    metric_label = ci.applied_metric or config.params.get("applied_metric_name", "EBITDA")
+    if applied_metric_val is None:
+        if config.params.get("multiple_type") == "ev_revenue":
+            applied_metric_val = (
+                submission.forecast[0].revenue if submission.forecast else None
             )
-        )
+            metric_label = "Revenue"
+        else:
+            applied_metric_val = (
+                submission.forecast[0].ebitda if submission.forecast else None
+            )
+            metric_label = "EBITDA"
+
+    if applied_metric_val is not None:
+        expected_ev = ci.applied_multiple * applied_metric_val
+        if abs(expected_ev - co.enterprise_value) > _ABS_TOL:
+            failures.append(
+                GraderFailure(
+                    error_type=ErrorType.ARITHMETIC,
+                    severity=Severity.CRITICAL,
+                    metric="comps.enterprise_value",
+                    expected=expected_ev,
+                    observed=co.enterprise_value,
+                    message=(
+                        f"Comps EV = multiple × {metric_label}: {ci.applied_multiple} × "
+                        f"{applied_metric_val} = {expected_ev:.4f} ≠ {co.enterprise_value:.4f}"
+                    ),
+                    diagnostic_code="COMPS_EV_ARITHMETIC",
+                )
+            )
 
     # 5. Comps equity = comps EV − net_debt
     net_debt = cs.gross_debt - cs.cash

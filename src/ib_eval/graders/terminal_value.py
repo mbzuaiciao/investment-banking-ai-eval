@@ -14,7 +14,6 @@ import math
 
 from ib_eval.case import GraderConfig
 from ib_eval.dcf import (
-    compute_discount_factor,
     compute_pv_terminal_value,
     compute_terminal_fcf,
     compute_terminal_value_at_horizon,
@@ -30,7 +29,7 @@ from ib_eval.schemas import (
 GRADER_NAME = "terminal_value"
 
 _TOL_PCT = 0.005  # 0.5% relative tolerance
-_ABS_TOL = 1.0   # $1mm absolute tolerance for large values
+_ABS_TOL = 1.0  # $1mm absolute tolerance for large values
 
 
 def grade(submission: Submission, config: GraderConfig) -> GraderResult:
@@ -140,8 +139,9 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
         )
 
     # 4. PV(TV) — check that TV was discounted
-    expected_pv_tv = compute_pv_terminal_value(expected_tv_horizon, wacc, n)
-    expected_df = compute_discount_factor(wacc, n)
+    term_exp = float(config.params.get("terminal_discount_exponent", n))
+    expected_pv_tv = compute_pv_terminal_value(expected_tv_horizon, wacc, term_exp)
+    expected_df = 1.0 / ((1.0 + wacc) ** term_exp)
 
     if abs(tvo.pv_terminal_value - expected_pv_tv) > _ABS_TOL:
         # Check the specific pattern where TV is not discounted at all
@@ -155,11 +155,29 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
                     observed=tvo.pv_terminal_value,
                     message=(
                         "Terminal value appears NOT discounted to valuation date. "
-                        f"PV(TV) = TV / (1 + WACC)^{n} = "
+                        f"PV(TV) = TV / (1 + WACC)^{term_exp:.1f} = "
                         f"{expected_tv_horizon:.4f} × {expected_df:.6f} "
                         f"= {expected_pv_tv:.4f}, not {tvo.pv_terminal_value:.4f}."
                     ),
                     diagnostic_code="TV_NOT_DISCOUNTED",
+                )
+            )
+        # Check if 4.5 was used when 5.0 was specified (or vice-versa)
+        elif abs(tvo.pv_terminal_value - expected_tv_horizon / ((1.0 + wacc) ** 4.5)) < _ABS_TOL:
+            failures.append(
+                GraderFailure(
+                    error_type=ErrorType.VALUATION,
+                    severity=Severity.CRITICAL,
+                    metric="pv_terminal_value",
+                    expected=expected_pv_tv,
+                    observed=tvo.pv_terminal_value,
+                    message=(
+                        "Terminal Value discounted using t=4.5 rather than full forecast "
+                        f"horizon t=5.0. Expected PV(TV) = {expected_tv_horizon:.4f} / "
+                        f"(1+{wacc:.4f})^5.0 = {expected_pv_tv:.4f}, "
+                        f"got {tvo.pv_terminal_value:.4f}."
+                    ),
+                    diagnostic_code="DCF_MIDYEAR_CONVENTION_ERROR",
                 )
             )
         else:

@@ -60,9 +60,26 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
     # 2. net_debt in bridge matches capital structure
     expected_net_debt = cs.gross_debt - cs.cash
     if abs(eb.minus_net_debt - expected_net_debt) > tol:
+        # Check Net Cash reversed (net_debt entered as positive net cash, subtracting it from EV)
+        if expected_net_debt < 0 and abs(eb.minus_net_debt - abs(expected_net_debt)) < tol * 2:
+            failures.append(
+                GraderFailure(
+                    error_type=ErrorType.ACCOUNTING,
+                    severity=Severity.CRITICAL,
+                    metric="equity_bridge.minus_net_debt",
+                    expected=expected_net_debt,
+                    observed=eb.minus_net_debt,
+                    message=(
+                        "Net cash was subtracted from Enterprise Value rather than added. "
+                        f"Company has Net Cash of ${abs(expected_net_debt):.2f}mm "
+                        f"(Gross Debt ${cs.gross_debt:.2f}mm − Cash ${cs.cash:.2f}mm = "
+                        f"{expected_net_debt:.2f}mm). Equity Value should be EV + Net Cash."
+                    ),
+                    diagnostic_code="EQ_BRIDGE_NET_CASH_REVERSED",
+                )
+            )
         # Detect cash reversed (net_debt = gross_debt + cash instead of gross_debt - cash)
-        cash_reversed_net_debt = cs.gross_debt + cs.cash
-        if abs(eb.minus_net_debt - cash_reversed_net_debt) < tol * 2:
+        elif abs(eb.minus_net_debt - (cs.gross_debt + cs.cash)) < tol * 2:
             failures.append(
                 GraderFailure(
                     error_type=ErrorType.ACCOUNTING,
@@ -128,40 +145,109 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
     # 3. Equity value = EV − net_debt
     expected_equity = eb.enterprise_value - eb.minus_net_debt
     if abs(expected_equity - eb.equity_value) > tol:
-        failures.append(
-            GraderFailure(
-                error_type=ErrorType.ARITHMETIC,
-                severity=Severity.CRITICAL,
-                metric="equity_bridge.equity_value",
-                expected=expected_equity,
-                observed=eb.equity_value,
-                message=(
-                    f"Equity value = EV − net debt: {eb.enterprise_value:.4f} − "
-                    f"{eb.minus_net_debt:.4f} = {expected_equity:.4f} ≠ {eb.equity_value:.4f}"
-                ),
-                diagnostic_code="EQ_BRIDGE_ARITHMETIC",
+        # Check if net cash was subtracted in equity value formula
+        if (
+            expected_net_debt < 0
+            and abs((eb.enterprise_value - abs(expected_net_debt)) - eb.equity_value) <= tol
+        ):
+            failures.append(
+                GraderFailure(
+                    error_type=ErrorType.ACCOUNTING,
+                    severity=Severity.CRITICAL,
+                    metric="equity_bridge.equity_value",
+                    expected=expected_equity,
+                    observed=eb.equity_value,
+                    message=(
+                        f"Equity Value subtracted net cash (${abs(expected_net_debt):.2f}mm) "
+                        f"instead of adding it: {eb.enterprise_value:.4f} + "
+                        f"{abs(expected_net_debt):.4f} = {expected_equity:.4f} "
+                        f"≠ {eb.equity_value:.4f}"
+                    ),
+                    diagnostic_code="EQ_BRIDGE_NET_CASH_REVERSED",
+                )
             )
-        )
-
-    # 4. Share price = equity / shares
-    if eb.diluted_shares > 0:
-        expected_price = eb.equity_value / eb.diluted_shares
-        if abs(expected_price - eb.implied_share_price) > _SHARE_PRICE_TOL:
+        else:
             failures.append(
                 GraderFailure(
                     error_type=ErrorType.ARITHMETIC,
                     severity=Severity.CRITICAL,
-                    metric="equity_bridge.implied_share_price",
-                    expected=expected_price,
-                    observed=eb.implied_share_price,
+                    metric="equity_bridge.equity_value",
+                    expected=expected_equity,
+                    observed=eb.equity_value,
                     message=(
-                        f"Share price = equity / shares: {eb.equity_value:.4f} / "
-                        f"{eb.diluted_shares} = {expected_price:.4f} "
-                        f"≠ {eb.implied_share_price}"
+                        f"Equity value = EV − net debt: {eb.enterprise_value:.4f} − "
+                        f"{eb.minus_net_debt:.4f} = {expected_equity:.4f} ≠ {eb.equity_value:.4f}"
                     ),
-                    diagnostic_code="EQ_BRIDGE_SHARE_PRICE",
+                    diagnostic_code="EQ_BRIDGE_ARITHMETIC",
                 )
             )
+
+    # 4. Share price = equity / shares
+    basic_shares_cfg = config.params.get("basic_shares")
+    diluted_shares_cfg = config.params.get("diluted_shares")
+    expected_shares = (
+        float(diluted_shares_cfg) if diluted_shares_cfg is not None else eb.diluted_shares
+    )
+    if (
+        diluted_shares_cfg
+        and basic_shares_cfg
+        and abs(eb.diluted_shares - float(basic_shares_cfg)) < 0.01
+    ):
+        failures.append(
+            GraderFailure(
+                error_type=ErrorType.VALUATION,
+                severity=Severity.CRITICAL,
+                metric="equity_bridge.diluted_shares",
+                expected=expected_shares,
+                observed=eb.diluted_shares,
+                message=(
+                    f"Basic common shares ({basic_shares_cfg}M) used instead of fully diluted "
+                    f"shares ({diluted_shares_cfg}M)."
+                ),
+                diagnostic_code="SHARES_BASIC_USED",
+            )
+        )
+    elif eb.diluted_shares > 0:
+        expected_price = eb.equity_value / expected_shares
+        if abs(expected_price - eb.implied_share_price) > _SHARE_PRICE_TOL:
+            # Check if basic shares were used instead of diluted
+            if (
+                basic_shares_cfg
+                and abs((eb.equity_value / float(basic_shares_cfg)) - eb.implied_share_price)
+                <= _SHARE_PRICE_TOL
+            ):
+                failures.append(
+                    GraderFailure(
+                        error_type=ErrorType.VALUATION,
+                        severity=Severity.CRITICAL,
+                        metric="equity_bridge.implied_share_price",
+                        expected=expected_price,
+                        observed=eb.implied_share_price,
+                        message=(
+                            f"Basic share count ({basic_shares_cfg}M) used instead of fully "
+                            f"diluted shares ({diluted_shares_cfg or eb.diluted_shares}M). "
+                            f"Implied share price should be {eb.equity_value:.4f} / "
+                            f"{expected_shares} = {expected_price:.4f}."
+                        ),
+                        diagnostic_code="SHARES_BASIC_USED",
+                    )
+                )
+            else:
+                failures.append(
+                    GraderFailure(
+                        error_type=ErrorType.ARITHMETIC,
+                        severity=Severity.CRITICAL,
+                        metric="equity_bridge.implied_share_price",
+                        expected=expected_price,
+                        observed=eb.implied_share_price,
+                        message=(
+                            f"Share price = equity / shares: {eb.equity_value:.4f} / "
+                            f"{expected_shares} = {expected_price:.4f} "
+                            f"≠ {eb.implied_share_price}"
+                        ),
+                        diagnostic_code="EQ_BRIDGE_SHARE_PRICE",
+                    )
+                )
 
     # 5. Convertible treatment — must be explicit
     if cs.convertible_treatment.value not in ("debt", "equity", "treasury_stock"):

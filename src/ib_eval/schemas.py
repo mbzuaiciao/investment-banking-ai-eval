@@ -128,7 +128,7 @@ class TerminalValueInputs(BaseModel):
 class TerminalValueOutputs(BaseModel):
     terminal_fcf: float
     terminal_value_at_horizon: float  # TV at end of final forecast year
-    pv_terminal_value: float          # PV of TV as of valuation date
+    pv_terminal_value: float  # PV of TV as of valuation date
 
 
 # ---------------------------------------------------------------------------
@@ -188,10 +188,7 @@ class EquityBridge(BaseModel):
     def equity_value_reconciles(self) -> EquityBridge:
         expected = round(self.enterprise_value - self.minus_net_debt, 4)
         if abs(expected - self.equity_value) > 0.1:
-            msg = (
-                f"equity_value mismatch: EV-net_debt={expected}, "
-                f"equity_value={self.equity_value}"
-            )
+            msg = f"equity_value mismatch: EV-net_debt={expected}, equity_value={self.equity_value}"
             raise ValueError(msg)
         return self
 
@@ -226,7 +223,10 @@ class CompsPeer(BaseModel):
 class CompsInputs(BaseModel):
     peers: list[CompsPeer]
     applied_multiple: float
-    applied_ebitda: float
+    applied_ebitda: float | None = None
+    applied_metric: str | None = None
+    applied_metric_value: float | None = None
+    multiple_type: str | None = None
 
 
 class CompsOutputs(BaseModel):

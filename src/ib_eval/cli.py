@@ -7,10 +7,14 @@ import sys
 from pathlib import Path
 
 import click
+from dotenv import load_dotenv
 
 from ib_eval.case import load_case
 from ib_eval.schemas import Submission
 from ib_eval.scoring import grade_submission
+
+# Load local .env if present; shell environment takes precedence (override=False by default)
+load_dotenv()
 
 _CASES_DIR = Path(__file__).parent.parent.parent / "cases"
 _CORRUPTED_DIR = Path(__file__).parent.parent.parent / "examples" / "corrupted"
@@ -65,10 +69,17 @@ def grade(
     else:
         case_path = _CASES_DIR / submission.case_id
         if not case_path.exists():
-            raise click.ClickException(
-                f"Case directory not found: {case_path}. "
-                "Use --case-dir to specify manually."
-            )
+            if "meridian" in submission.case_id.lower() and (_CASES_DIR / "meridian-v1").exists():
+                case_path = _CASES_DIR / "meridian-v1"
+            elif (
+                "northstar" in submission.case_id.lower()
+                and (_CASES_DIR / "northstar-v1").exists()
+            ):
+                case_path = _CASES_DIR / "northstar-v1"
+            else:
+                raise click.ClickException(
+                    f"Case directory not found: {case_path}. Use --case-dir to specify manually."
+                )
         case = load_case(case_path)
 
     report = grade_submission(submission, case)
@@ -92,9 +103,7 @@ def grade(
     click.echo("  Grader breakdown:")
     for r in report.grader_results:
         status = "✓" if r.passed else "✗"
-        click.echo(
-            f"    {status} {r.grader:<25} {r.points_earned:5.1f} / {r.max_points:5.1f}"
-        )
+        click.echo(f"    {status} {r.grader:<25} {r.points_earned:5.1f} / {r.max_points:5.1f}")
 
     click.echo()
 
@@ -581,5 +590,3 @@ def repair_benchmark(
         )
     click.echo(f"  Artifacts saved to:         {res.experiment_dir}")
     click.echo("==================================================")
-
-

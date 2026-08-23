@@ -28,11 +28,7 @@ def load_corrupted(name: str) -> Submission:
 
 
 def _has_code(report: ScoringReport, code: str) -> bool:
-    return any(
-        f.diagnostic_code == code
-        for r in report.grader_results
-        for f in r.failures
-    )
+    return any(f.diagnostic_code == code for r in report.grader_results for f in r.failures)
 
 
 def _grader_result(report: ScoringReport, grader: str) -> GraderResult | None:

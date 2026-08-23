@@ -20,8 +20,9 @@ from ib_eval.schemas import (
 
 GRADER_NAME = "enterprise_value"
 
-_ABS_TOL = 1.0    # $1mm — tight for an EV check
-_REL_TOL = 0.02   # 2% for "materially wrong" threshold
+_ABS_TOL = 1.0  # $1mm — tight for an EV check
+_REL_TOL = 0.02  # 2% for "materially wrong" threshold
+_GOLD_EV_APPROX = 1713.0
 
 
 def grade(submission: Submission, config: GraderConfig) -> GraderResult:
@@ -71,20 +72,23 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
             )
         )
 
-    # 3. Relative sanity vs. approximate gold (~$1,713mm)
-    _gold_ev_approx = 1713.0
-    rel_diff = abs(do.enterprise_value - _gold_ev_approx) / _gold_ev_approx
-    if rel_diff > _REL_TOL:
-        # Only flag as warning if everything else passed — could be from different inputs
-        warnings.append(
-            f"DCF EV = {do.enterprise_value:.1f} differs from approximate gold "
-            f"({_gold_ev_approx:.1f}) by {rel_diff:.1%}. "
-            "Verify WACC, TV, and forecast assumptions are consistent."
-        )
-        info.append(
-            f"Note: gold EV ({_gold_ev_approx}) is approximate; "
-            "use internally consistent precise values as canonical."
-        )
+    # 3. Relative sanity vs. approximate gold if configured
+    gold_ev_approx = config.params.get(
+        "gold_ev_approx", _GOLD_EV_APPROX if submission.case_id == "northstar-v1" else None
+    )
+    if gold_ev_approx is not None:
+        gold_ev_val = float(gold_ev_approx)
+        rel_diff = abs(do.enterprise_value - gold_ev_val) / gold_ev_val
+        if rel_diff > _REL_TOL:
+            warnings.append(
+                f"DCF EV = {do.enterprise_value:.1f} differs from approximate gold "
+                f"({gold_ev_val:.1f}) by {rel_diff:.1%}. "
+                "Verify WACC, TV, and forecast assumptions are consistent."
+            )
+            info.append(
+                f"Note: gold EV ({gold_ev_val:.1f}) is approximate; "
+                "use internally consistent precise values as canonical."
+            )
 
     n_critical = sum(1 for f in failures if f.severity == Severity.CRITICAL)
     deduction = n_critical * (max_points / 3)

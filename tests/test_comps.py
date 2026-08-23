@@ -112,3 +112,58 @@ def test_comps_share_price_zero_shares() -> None:
 
     with pytest.raises(ValueError):
         compute_comps_share_price(equity_value=1000.0, diluted_shares=0.0)
+
+
+def test_comps_inputs_schema_ebitda_based() -> None:
+    """EBITDA-based comps with numeric applied_ebitda validates cleanly."""
+    from ib_eval.schemas import CompsInputs, CompsPeer
+
+    ci = CompsInputs(
+        peers=[CompsPeer(name="Peer A", ltm_ev_ebitda=8.0, ntm_ev_ebitda=7.5)],
+        applied_multiple=7.5,
+        applied_ebitda=150.0,
+    )
+    assert ci.applied_ebitda == 150.0
+    assert ci.applied_multiple == 7.5
+
+    data = ci.model_dump()
+    assert data["applied_ebitda"] == 150.0
+    ci_reconstructed = CompsInputs.model_validate(data)
+    assert ci_reconstructed.applied_ebitda == 150.0
+
+
+def test_comps_inputs_schema_revenue_based_null_ebitda() -> None:
+    """Revenue-based comps with null applied_ebitda validates cleanly."""
+    from ib_eval.schemas import CompsInputs, CompsPeer
+
+    ci = CompsInputs(
+        peers=[CompsPeer(name="SaaS Peer", ltm_ev_ebitda=None, ntm_ev_ebitda=6.35)],
+        applied_multiple=6.35,
+        applied_ebitda=None,
+        applied_metric="revenue",
+        applied_metric_value=912.0,
+        multiple_type="ev_revenue",
+    )
+    assert ci.applied_ebitda is None
+    assert ci.applied_multiple == 6.35
+    assert ci.applied_metric == "revenue"
+    assert ci.applied_metric_value == 912.0
+
+    # Serialization and deserialization roundtrip
+    data = ci.model_dump()
+    assert data["applied_ebitda"] is None
+    ci_reconstructed = CompsInputs.model_validate(data)
+    assert ci_reconstructed.applied_ebitda is None
+    assert ci_reconstructed.applied_metric_value == 912.0
+
+
+def test_comps_inputs_schema_omitted_ebitda() -> None:
+    """CompsInputs can omit applied_ebitda entirely."""
+    from ib_eval.schemas import CompsInputs, CompsPeer
+
+    ci = CompsInputs(
+        peers=[CompsPeer(name="Peer X", ltm_ev_ebitda=5.0, ntm_ev_ebitda=4.5)],
+        applied_multiple=4.5,
+    )
+    assert ci.applied_ebitda is None
+

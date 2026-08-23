@@ -60,26 +60,27 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
             )
         )
 
-    # 3. Check for any notes field claiming management guided to exactly 8%
+    # 3. Check for any notes field claiming management guided to an exact number
     notes_str = str(submission.notes).lower()
-    fabrication_phrases = [
+    default_fabrication_phrases = [
         "management guided to 8%",
         "management stated 8%",
         "management explicitly guided 8",
         "management provided 8%",
     ]
+    fabrication_phrases = config.params.get("fabrication_phrases", default_fabrication_phrases)
     for phrase in fabrication_phrases:
-        if phrase in notes_str:
+        if phrase.lower() in notes_str:
             failures.append(
                 GraderFailure(
                     error_type=ErrorType.PROVENANCE,
                     severity=Severity.CRITICAL,
                     metric="revenue_growth/2026E",
-                    expected="qualitative guidance only",
+                    expected="qualitative or range guidance only",
                     observed=phrase,
                     message=(
                         f"Submission notes contain fabricated claim: '{phrase}'. "
-                        "Management only provided qualitative 'high single digits' guidance."
+                        "Management did not provide a single exact point commitment."
                     ),
                     diagnostic_code="SF_GUIDANCE_FABRICATED",
                 )
@@ -98,12 +99,13 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
         )
 
     # 5. Check classification coherence: direct must reference a known source
-    known_sources = {
+    default_known_sources = {
         "management_guidance.md",
         "quarterly_report.md",
         "income_statement.md",
         "capital_structure.md",
     }
+    known_sources = set(config.params.get("known_sources", default_known_sources))
     for rec in submission.provenance:
         if (
             rec.classification == ProvenanceClassification.DIRECT

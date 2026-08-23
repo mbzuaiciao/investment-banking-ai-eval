@@ -141,9 +141,7 @@ class DirectAnalyst:
                 "provider": config.provider,
                 "model": config.model,
             }
-            (trial_dir / "provider_error.json").write_text(
-                json.dumps(provider_payload, indent=2)
-            )
+            (trial_dir / "provider_error.json").write_text(json.dumps(provider_payload, indent=2))
             parse_error = f"Provider error: {provider_error}"
         else:
             submission, parse_error = parse_submission_response(raw_text)
@@ -163,9 +161,7 @@ class DirectAnalyst:
                     "error": parse_error or "Unknown parse error",
                     "raw_response_preserved": True,
                 }
-                (trial_dir / "parse_error.json").write_text(
-                    json.dumps(parse_payload, indent=2)
-                )
+                (trial_dir / "parse_error.json").write_text(json.dumps(parse_payload, indent=2))
 
         # 4. Save metadata
         metadata = TrialMetadata(
@@ -187,9 +183,7 @@ class DirectAnalyst:
             git_commit=get_git_commit(),
         )
 
-        (trial_dir / "metadata.json").write_text(
-            json.dumps(metadata.__dict__, indent=2)
-        )
+        (trial_dir / "metadata.json").write_text(json.dumps(metadata.__dict__, indent=2))
 
         return TrialResult(
             metadata=metadata,
@@ -236,9 +230,7 @@ class DirectAnalyst:
                 "provider": config.provider,
                 "model": config.model,
             }
-            (trial_dir / "provider_error.json").write_text(
-                json.dumps(provider_payload, indent=2)
-            )
+            (trial_dir / "provider_error.json").write_text(json.dumps(provider_payload, indent=2))
             metadata = TrialMetadata(
                 run_index=run_index,
                 provider=config.provider,
@@ -277,12 +269,8 @@ class DirectAnalyst:
                 "error": init_parse_err or "Unknown initial parse error",
                 "raw_response_preserved": True,
             }
-            (trial_dir / "initial_parse_error.json").write_text(
-                json.dumps(parse_payload, indent=2)
-            )
-            (trial_dir / "parse_error.json").write_text(
-                json.dumps(parse_payload, indent=2)
-            )
+            (trial_dir / "initial_parse_error.json").write_text(json.dumps(parse_payload, indent=2))
+            (trial_dir / "parse_error.json").write_text(json.dumps(parse_payload, indent=2))
             metadata = TrialMetadata(
                 run_index=run_index,
                 provider=config.provider,
@@ -323,9 +311,7 @@ class DirectAnalyst:
         initial_score = initial_grade.total_score
         initial_hf_codes = [f.diagnostic_code for f in initial_grade.hard_failures]
         all_initial_diagnostics = [
-            f.diagnostic_code
-            for r in initial_grade.grader_results
-            for f in r.failures
+            f.diagnostic_code for r in initial_grade.grader_results for f in r.failures
         ]
 
         # ===================================================================
@@ -335,9 +321,7 @@ class DirectAnalyst:
             (trial_dir / "submission.json").write_text(
                 json.dumps(initial_sub.model_dump(), indent=2)
             )
-            (trial_dir / "grade.json").write_text(
-                json.dumps(initial_grade.model_dump(), indent=2)
-            )
+            (trial_dir / "grade.json").write_text(json.dumps(initial_grade.model_dump(), indent=2))
             (trial_dir / "raw_response.txt").write_text(init_raw_text)
 
             metadata = TrialMetadata(
@@ -471,9 +455,7 @@ class DirectAnalyst:
             (trial_dir / "repaired_parse_error.json").write_text(
                 json.dumps(repair_parse_payload, indent=2)
             )
-            (trial_dir / "parse_error.json").write_text(
-                json.dumps(repair_parse_payload, indent=2)
-            )
+            (trial_dir / "parse_error.json").write_text(json.dumps(repair_parse_payload, indent=2))
             metadata = TrialMetadata(
                 run_index=run_index,
                 provider=config.provider,
@@ -520,24 +502,18 @@ class DirectAnalyst:
         (trial_dir / "repaired_submission.json").write_text(
             json.dumps(repaired_sub.model_dump(), indent=2)
         )
-        (trial_dir / "submission.json").write_text(
-            json.dumps(repaired_sub.model_dump(), indent=2)
-        )
+        (trial_dir / "submission.json").write_text(json.dumps(repaired_sub.model_dump(), indent=2))
 
         repaired_grade = grade_submission(repaired_sub, case)
         (trial_dir / "repaired_grade.json").write_text(
             json.dumps(repaired_grade.model_dump(), indent=2)
         )
-        (trial_dir / "grade.json").write_text(
-            json.dumps(repaired_grade.model_dump(), indent=2)
-        )
+        (trial_dir / "grade.json").write_text(json.dumps(repaired_grade.model_dump(), indent=2))
 
         repaired_score = repaired_grade.total_score
         repaired_hf_codes = [f.diagnostic_code for f in repaired_grade.hard_failures]
         all_repaired_diagnostics = [
-            f.diagnostic_code
-            for r in repaired_grade.grader_results
-            for f in r.failures
+            f.diagnostic_code for r in repaired_grade.grader_results for f in r.failures
         ]
 
         set_init = set(all_initial_diagnostics)

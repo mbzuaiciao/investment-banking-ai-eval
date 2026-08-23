@@ -109,9 +109,7 @@ def run_controlled_repair_benchmark(
         )
 
         initial_all_codes = [
-            f.diagnostic_code
-            for r in initial_grade.grader_results
-            for f in r.failures
+            f.diagnostic_code for r in initial_grade.grader_results for f in r.failures
         ]
         initial_hf_codes = [f.diagnostic_code for f in initial_grade.hard_failures]
 
@@ -222,13 +220,9 @@ def run_controlled_repair_benchmark(
                 )
 
                 repaired_all_codes = [
-                    f.diagnostic_code
-                    for r in repaired_grade.grader_results
-                    for f in r.failures
+                    f.diagnostic_code for r in repaired_grade.grader_results for f in r.failures
                 ]
-                repaired_hf_codes = [
-                    f.diagnostic_code for f in repaired_grade.hard_failures
-                ]
+                repaired_hf_codes = [f.diagnostic_code for f in repaired_grade.hard_failures]
 
                 resolved = fixture.expected_diagnostic not in repaired_all_codes
                 persisting = sorted(list(set(initial_all_codes) & set(repaired_all_codes)))
@@ -236,15 +230,9 @@ def run_controlled_repair_benchmark(
 
                 is_success = resolved and (len(repaired_hf_codes) == 0)
                 is_partial = resolved and (len(repaired_hf_codes) > 0)
-                outcome = (
-                    "success"
-                    if is_success
-                    else ("partial" if is_partial else "persistent")
-                )
+                outcome = "success" if is_success else ("partial" if is_partial else "persistent")
 
-                score_delta = round(
-                    repaired_grade.total_score - initial_grade.total_score, 2
-                )
+                score_delta = round(repaired_grade.total_score - initial_grade.total_score, 2)
 
                 t_res = ControlledFixtureTrialResult(
                     fixture_id=fixture.fixture_id,

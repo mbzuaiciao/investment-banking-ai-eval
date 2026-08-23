@@ -40,8 +40,13 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
     info: list[str] = []
 
     forecast_by_year = {fy.year: fy for fy in submission.forecast}
+    gold_margins_cfg = config.params.get("gold_margins", _GOLD_MARGINS)
+    gold_margins = {int(k): float(v) for k, v in gold_margins_cfg.items()}
+    da_pct = float(config.params.get("da_pct", _DA_PCT))
+    sbc_pcts_cfg = config.params.get("sbc_pcts")
+    sbc_pcts = {int(k): float(v) for k, v in sbc_pcts_cfg.items()} if sbc_pcts_cfg else None
 
-    for year, gold_margin in _GOLD_MARGINS.items():
+    for year, gold_margin in gold_margins.items():
         fy = forecast_by_year.get(year)
         if fy is None:
             continue  # revenue grader already flagged missing year
@@ -64,8 +69,8 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
                 )
             )
 
-        # 2. D&A = 4.0% of revenue
-        expected_da = fy.revenue * _DA_PCT
+        # 2. D&A = da_pct of revenue
+        expected_da = fy.revenue * da_pct
         if abs(expected_da - fy.da) > tol:
             failures.append(
                 GraderFailure(
@@ -75,30 +80,70 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
                     expected=expected_da,
                     observed=fy.da,
                     message=(
-                        f"D&A should be {_DA_PCT:.1%} of revenue: "
-                        f"{fy.revenue} × {_DA_PCT} = {expected_da:.4f} ≠ {fy.da}"
+                        f"D&A should be {da_pct:.1%} of revenue: "
+                        f"{fy.revenue} × {da_pct} = {expected_da:.4f} ≠ {fy.da}"
                     ),
                     diagnostic_code="MARGIN_DA_INCONSISTENCY",
                 )
             )
 
-        # 3. EBIT = EBITDA − D&A
-        expected_ebit = fy.ebitda - fy.da
-        if abs(expected_ebit - fy.ebit) > tol:
-            failures.append(
-                GraderFailure(
-                    error_type=ErrorType.ACCOUNTING,
-                    severity=Severity.CRITICAL,
-                    metric=f"ebit/{year}E",
-                    expected=expected_ebit,
-                    observed=fy.ebit,
-                    message=(
-                        f"EBIT = EBITDA − D&A: {fy.ebitda} − {fy.da} = {expected_ebit:.4f} "
-                        f"≠ {fy.ebit}"
-                    ),
-                    diagnostic_code="MARGIN_EBIT_INCONSISTENCY",
+        # 3. EBIT = EBITDA − D&A (or EBITDA − SBC − D&A for SaaS)
+        if sbc_pcts is not None and year in sbc_pcts:
+            sbc_pct = sbc_pcts[year]
+            expected_sbc = fy.revenue * sbc_pct
+            expected_ebit = fy.ebitda - expected_sbc - fy.da
+            if abs(expected_ebit - fy.ebit) > tol:
+                # Check if SBC was omitted from GAAP EBIT
+                if abs((fy.ebitda - fy.da) - fy.ebit) <= tol:
+                    failures.append(
+                        GraderFailure(
+                            error_type=ErrorType.ACCOUNTING,
+                            severity=Severity.CRITICAL,
+                            metric=f"ebit/{year}E",
+                            expected=expected_ebit,
+                            observed=fy.ebit,
+                            message=(
+                                f"SBC omitted from GAAP EBIT: Adjusted EBITDA (${fy.ebitda:.2f}mm) "
+                                f"adds back SBC (${expected_sbc:.2f}mm), so GAAP EBIT should be "
+                                f"Adjusted EBITDA − SBC − D&A = {expected_ebit:.4f}, "
+                                f"not {fy.ebit:.4f}."
+                            ),
+                            diagnostic_code="SBC_EBITDA_INCONSISTENCY",
+                        )
+                    )
+                else:
+                    failures.append(
+                        GraderFailure(
+                            error_type=ErrorType.ACCOUNTING,
+                            severity=Severity.CRITICAL,
+                            metric=f"ebit/{year}E",
+                            expected=expected_ebit,
+                            observed=fy.ebit,
+                            message=(
+                                f"GAAP EBIT inconsistency: Adjusted EBITDA ({fy.ebitda:.2f}) − "
+                                f"SBC ({expected_sbc:.2f}) − D&A ({fy.da:.2f}) = "
+                                f"{expected_ebit:.4f} ≠ {fy.ebit:.4f}"
+                            ),
+                            diagnostic_code="MARGIN_EBIT_INCONSISTENCY",
+                        )
+                    )
+        else:
+            expected_ebit = fy.ebitda - fy.da
+            if abs(expected_ebit - fy.ebit) > tol:
+                failures.append(
+                    GraderFailure(
+                        error_type=ErrorType.ACCOUNTING,
+                        severity=Severity.CRITICAL,
+                        metric=f"ebit/{year}E",
+                        expected=expected_ebit,
+                        observed=fy.ebit,
+                        message=(
+                            f"EBIT = EBITDA − D&A: {fy.ebitda} − {fy.da} = {expected_ebit:.4f} "
+                            f"≠ {fy.ebit}"
+                        ),
+                        diagnostic_code="MARGIN_EBIT_INCONSISTENCY",
+                    )
                 )
-            )
 
         # 4. Check gold margin (info only — candidate may choose different margin)
         if abs(fy.ebitda_margin - gold_margin) > 0.005:

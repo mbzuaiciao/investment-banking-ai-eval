@@ -20,12 +20,14 @@ SOURCE_CAPITAL_STRUCTURE = "capital_structure.md"
 # Classification helpers
 # ---------------------------------------------------------------------------
 
-DIRECT_SOURCES = frozenset({
-    SOURCE_MANAGEMENT_GUIDANCE,
-    SOURCE_QUARTERLY_REPORT,
-    SOURCE_INCOME_STATEMENT,
-    SOURCE_CAPITAL_STRUCTURE,
-})
+DIRECT_SOURCES = frozenset(
+    {
+        SOURCE_MANAGEMENT_GUIDANCE,
+        SOURCE_QUARTERLY_REPORT,
+        SOURCE_INCOME_STATEMENT,
+        SOURCE_CAPITAL_STRUCTURE,
+    }
+)
 
 
 def classify_source(source: str, classification: str) -> ProvenanceClassification:

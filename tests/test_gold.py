@@ -10,9 +10,7 @@ import pytest
 from ib_eval.schemas import Submission
 from ib_eval.scoring import grade_submission
 
-_GOLD_PATH = (
-    Path(__file__).parent.parent / "examples" / "gold_submission" / "submission.json"
-)
+_GOLD_PATH = Path(__file__).parent.parent / "examples" / "gold_submission" / "submission.json"
 _CASES_DIR = Path(__file__).parent.parent / "cases"
 
 

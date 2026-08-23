@@ -58,8 +58,19 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
     info: list[str] = []
 
     forecast_by_year = {fy.year: fy for fy in submission.forecast}
+    gold_revenues_cfg = config.params.get("gold_revenues", _GOLD_REVENUES)
+    gold_revenues = {int(k): float(v) for k, v in gold_revenues_cfg.items()}
+    base_revenue = float(config.params.get("base_revenue", _BASE_REVENUE_2025))
+    growth_low = float(config.params.get("growth_range_low", 0.07))
+    growth_high = float(config.params.get("growth_range_high", 0.09))
+    growth_label = str(config.params.get("growth_range_label", "7–9%"))
+    rev_low = base_revenue * (1.0 + growth_low)
+    rev_high = base_revenue * (1.0 + growth_high)
 
-    for year, gold_rev in _GOLD_REVENUES.items():
+    arr_confusion = config.params.get("arr_confusion_value")
+    first_forecast_year = min(gold_revenues.keys()) if gold_revenues else 2026
+
+    for year, gold_rev in gold_revenues.items():
         fy = forecast_by_year.get(year)
         if fy is None:
             failures.append(
@@ -75,18 +86,39 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
             )
             continue
 
-        # 1. Check for Q2 confusion only on 2026E
-        if year == 2026:
+        # 1. Check for source confusion on the first forecast year
+        if year == first_forecast_year:
+            # Check ARR vs Revenue confusion if configured
+            if arr_confusion is not None:
+                arr_val = float(arr_confusion)
+                arr_mismatch = abs(fy.revenue - arr_val * (1.0 + fy.revenue_growth)) < 5.0
+                if arr_mismatch or abs(fy.revenue - arr_val) < 5.0:
+                    failures.append(
+                        GraderFailure(
+                            error_type=ErrorType.PROVENANCE,
+                            severity=Severity.CRITICAL,
+                            metric=f"revenue/{year}E",
+                            expected=f"~{gold_rev}",
+                            observed=fy.revenue,
+                            message=(
+                                f"{year}E revenue ({fy.revenue:.2f}) appears derived from ending "
+                                f"ARR (${arr_val:.1f}mm) rather than base GAAP revenue "
+                                f"(${base_revenue:.1f}mm)."
+                            ),
+                            diagnostic_code="REV_ARR_CONFUSION",
+                        )
+                    )
+            # Check Q2/H1 confusion (Northstar)
             if abs(fy.revenue - _Q2_REVENUE) < 5.0:
                 failures.append(
                     GraderFailure(
                         error_type=ErrorType.PROVENANCE,
                         severity=Severity.CRITICAL,
-                        metric="revenue/2026E",
+                        metric=f"revenue/{year}E",
                         expected=f"~{gold_rev}",
                         observed=fy.revenue,
                         message=(
-                            f"2026E revenue ({fy.revenue}) is close to Q2 standalone "
+                            f"{year}E revenue ({fy.revenue}) is close to Q2 standalone "
                             f"revenue ({_Q2_REVENUE}). Possible quarterly/annual confusion."
                         ),
                         diagnostic_code="REV_QUARTERLY_CONFUSION",
@@ -97,29 +129,29 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
                     GraderFailure(
                         error_type=ErrorType.PROVENANCE,
                         severity=Severity.CRITICAL,
-                        metric="revenue/2026E",
+                        metric=f"revenue/{year}E",
                         expected=f"~{gold_rev}",
                         observed=fy.revenue,
                         message=(
-                            f"2026E revenue ({fy.revenue}) is close to H1 YTD revenue "
+                            f"{year}E revenue ({fy.revenue}) is close to H1 YTD revenue "
                             f"({_H1_REVENUE}). Possible quarterly/annual confusion."
                         ),
                         diagnostic_code="REV_QUARTERLY_CONFUSION",
                     )
                 )
 
-            # Check defensible range for 2026E (analyst-chosen growth rate)
-            if fy.revenue < _REVENUE_2026_LOW - tol or fy.revenue > _REVENUE_2026_HIGH + tol:
+            # Check defensible range for first forecast year (analyst-chosen growth rate)
+            if fy.revenue < rev_low - tol or fy.revenue > rev_high + tol:
                 failures.append(
                     GraderFailure(
                         error_type=ErrorType.UNSUPPORTED,
                         severity=Severity.WARNING,
-                        metric="revenue/2026E",
-                        expected=f"{_REVENUE_2026_LOW}–{_REVENUE_2026_HIGH}",
+                        metric=f"revenue/{year}E",
+                        expected=f"{rev_low}–{rev_high}",
                         observed=fy.revenue,
                         message=(
-                            f"2026E revenue {fy.revenue} is outside the defensible "
-                            f"7–9% growth range ({_REVENUE_2026_LOW}–{_REVENUE_2026_HIGH}). "
+                            f"{year}E revenue {fy.revenue} is outside the defensible "
+                            f"{growth_label} growth range ({rev_low:.2f}–{rev_high:.2f}). "
                             "Verify that the growth assumption is supportable."
                         ),
                         diagnostic_code="REV_GROWTH_OUT_OF_RANGE",
@@ -148,10 +180,10 @@ def grade(submission: Submission, config: GraderConfig) -> GraderResult:
                     )
 
         # 2. Check internal consistency: revenue_growth stated vs actual
-        if year > 2026 or (year == 2026):
+        if year > first_forecast_year or (year == first_forecast_year):
             prev_year_rev = (
-                _BASE_REVENUE_2025
-                if year == 2026
+                base_revenue
+                if year == first_forecast_year
                 else (forecast_by_year[year - 1].revenue if year - 1 in forecast_by_year else None)
             )
             if prev_year_rev is not None:

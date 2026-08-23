@@ -65,9 +65,21 @@ def compute_ufcf(
     return nopat + da - capex - delta_nwc
 
 
-def compute_discount_factor(wacc: float, period: int) -> float:
-    """End-of-year discounting: df = 1 / (1 + WACC)^n."""
-    return 1.0 / (1.0 + wacc) ** period
+def compute_discount_factor(
+    wacc: float,
+    period: float | int,
+    convention: str = "end_of_year",
+) -> float:
+    """Compute discount factor.
+
+    - end_of_year: df = 1 / (1 + WACC)^n
+    - mid_year: df = 1 / (1 + WACC)^(n - 0.5) if n is integer, else 1 / (1 + WACC)^n
+    """
+    if convention == "mid_year" and isinstance(period, int):
+        exponent = float(period) - 0.5
+    else:
+        exponent = float(period)
+    return 1.0 / (1.0 + wacc) ** exponent
 
 
 # ---------------------------------------------------------------------------
@@ -101,13 +113,13 @@ def compute_terminal_value_at_horizon(
 def compute_pv_terminal_value(
     terminal_value_at_horizon: float,
     wacc: float,
-    n_forecast_years: int,
+    n_forecast_years: int | float = 5,
 ) -> float:
     """Discount the terminal value back to the valuation date.
 
     PV_TV = TV / (1 + WACC)^n
     """
-    return terminal_value_at_horizon * compute_discount_factor(wacc, n_forecast_years)
+    return terminal_value_at_horizon / ((1.0 + wacc) ** float(n_forecast_years))
 
 
 # ---------------------------------------------------------------------------
@@ -207,6 +219,10 @@ def run_dcf_model(
     forecast_start_year: int = 2026,
     # Previous year NWC (for ΔNWC calculation in first forecast year)
     prev_nwc: float | None = None,
+    # Discounting convention ("end_of_year" or "mid_year")
+    discounting_convention: str = "end_of_year",
+    # Optional SBC schedule (% of revenue)
+    sbc_pcts: list[float] | None = None,
 ) -> DCFModelResult:
     """Run the full DCF model from first principles."""
     n = len(revenue_growth_rates)
@@ -229,14 +245,18 @@ def run_dcf_model(
         rev = prev_rev * (1.0 + g)
         ebitda = rev * margin
         da = rev * da_pct
-        ebit = ebitda - da
+        if sbc_pcts is not None and i < len(sbc_pcts):
+            sbc = rev * sbc_pcts[i]
+            ebit = ebitda - sbc - da
+        else:
+            ebit = ebitda - da
         nopat = compute_nopat(ebit, tax_rate)
         capex = rev * capex_pct
         nwc = rev * nwc_pct
         delta_nwc = nwc - prev_nwc_val
         ufcf = compute_ufcf(nopat, da, capex, delta_nwc)
         period = i + 1
-        df = compute_discount_factor(wacc, period)
+        df = compute_discount_factor(wacc, period, convention=discounting_convention)
         pv = ufcf * df
 
         forecast_years.append(

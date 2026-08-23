@@ -33,43 +33,21 @@ DIAGNOSTIC_INVARIANT_GUIDES: dict[str, str] = {
     "MARGIN_DA_INCONSISTENCY": (
         "D&A percentage calculation error: D&A_t must equal Revenue_t * DA_Margin_t."
     ),
-    "MARGIN_EBIT_INCONSISTENCY": (
-        "EBIT arithmetic error: EBIT_t must equal EBITDA_t - D&A_t."
-    ),
-    "FCF_NOPAT_ERROR": (
-        "NOPAT formula error: NOPAT_t must equal EBIT_t * (1 - tax_rate)."
-    ),
-    "FCF_CAPEX_DOUBLE_COUNTED": (
-        "Capex was subtracted multiple times or deducted incorrectly."
-    ),
-    "FCF_CAPEX_ERROR": (
-        "Capex calculation error: Capex_t must equal Revenue_t * Capex_pct_t."
-    ),
-    "FCF_NWC_DELTA_ERROR": (
-        "ΔNWC arithmetic error: ΔNWC_t must equal NWC_t - NWC_(t-1)."
-    ),
-    "FCF_UFCF_ERROR": (
-        "UFCF formula error: UFCF_t must equal NOPAT_t + D&A_t - Capex_t - ΔNWC_t."
-    ),
-    "FCF_PV_ERROR": (
-        "PV(UFCF) discounting error: PV(UFCF)_t must equal UFCF_t / (1 + WACC)^t."
-    ),
+    "MARGIN_EBIT_INCONSISTENCY": ("EBIT arithmetic error: EBIT_t must equal EBITDA_t - D&A_t."),
+    "FCF_NOPAT_ERROR": ("NOPAT formula error: NOPAT_t must equal EBIT_t * (1 - tax_rate)."),
+    "FCF_CAPEX_DOUBLE_COUNTED": ("Capex was subtracted multiple times or deducted incorrectly."),
+    "FCF_CAPEX_ERROR": ("Capex calculation error: Capex_t must equal Revenue_t * Capex_pct_t."),
+    "FCF_NWC_DELTA_ERROR": ("ΔNWC arithmetic error: ΔNWC_t must equal NWC_t - NWC_(t-1)."),
+    "FCF_UFCF_ERROR": ("UFCF formula error: UFCF_t must equal NOPAT_t + D&A_t - Capex_t - ΔNWC_t."),
+    "FCF_PV_ERROR": ("PV(UFCF) discounting error: PV(UFCF)_t must equal UFCF_t / (1 + WACC)^t."),
     "WACC_PRETAX_DEBT": (
         "After-tax cost of debt must reflect the interest tax shield: "
         "Kd_after_tax = Kd * (1 - tax_rate)."
     ),
-    "WACC_FORMULA_ERROR": (
-        "WACC formula error: WACC must equal (We * Ke) + (Wd * Kd_after_tax)."
-    ),
-    "WACC_WEIGHTS_ERROR": (
-        "Capital structure weights must sum to 1.0 (We + Wd = 1.0)."
-    ),
-    "WACC_KE_ERROR": (
-        "Cost of equity CAPM error: Ke = Rf + Beta * ERP."
-    ),
-    "WACC_KD_ERROR": (
-        "After-tax cost of debt error: Kd_after_tax = Kd * (1 - tax_rate)."
-    ),
+    "WACC_FORMULA_ERROR": ("WACC formula error: WACC must equal (We * Ke) + (Wd * Kd_after_tax)."),
+    "WACC_WEIGHTS_ERROR": ("Capital structure weights must sum to 1.0 (We + Wd = 1.0)."),
+    "WACC_KE_ERROR": ("Cost of equity CAPM error: Ke = Rf + Beta * ERP."),
+    "WACC_KD_ERROR": ("After-tax cost of debt error: Kd_after_tax = Kd * (1 - tax_rate)."),
     "TV_NOT_DISCOUNTED": (
         "Terminal value must be discounted back to valuation date (t=0): "
         "PV(TV) = TV / (1 + WACC)^n. Do not add undiscounted TV directly to Enterprise Value."
@@ -78,18 +56,10 @@ DIAGNOSTIC_INVARIANT_GUIDES: dict[str, str] = {
         "Terminal value Gordon Growth error: TV = Terminal FCF / (WACC - g), "
         "where Terminal FCF = UFCF_final * (1 + g)."
     ),
-    "TV_GROWTH_GT_WACC": (
-        "Terminal growth rate g must be strictly less than WACC (g < WACC)."
-    ),
-    "TV_PV_ERROR": (
-        "Terminal value present value discounting error: PV(TV) = TV / (1 + WACC)^n."
-    ),
-    "EV_SUM_PVUFCF_MISMATCH": (
-        "Sum of PV(UFCF) must equal the sum of annual PV(UFCF)_t values."
-    ),
-    "EV_SUM_ERROR": (
-        "Enterprise Value must equal Sum of PV(UFCF) + PV(TV)."
-    ),
+    "TV_GROWTH_GT_WACC": ("Terminal growth rate g must be strictly less than WACC (g < WACC)."),
+    "TV_PV_ERROR": ("Terminal value present value discounting error: PV(TV) = TV / (1 + WACC)^n."),
+    "EV_SUM_PVUFCF_MISMATCH": ("Sum of PV(UFCF) must equal the sum of annual PV(UFCF)_t values."),
+    "EV_SUM_ERROR": ("Enterprise Value must equal Sum of PV(UFCF) + PV(TV)."),
     "EQ_BRIDGE_CASH_REVERSED": (
         "Cash reduces net debt: Net Debt = Gross Debt - Cash. Do not add cash to debt."
     ),
@@ -97,9 +67,7 @@ DIAGNOSTIC_INVARIANT_GUIDES: dict[str, str] = {
         "Net debt must be deducted from Enterprise Value: "
         "Equity Value = Enterprise Value - Net Debt."
     ),
-    "EQ_BRIDGE_NET_DEBT_ERROR": (
-        "Net debt arithmetic error: Net Debt = Gross Debt - Cash."
-    ),
+    "EQ_BRIDGE_NET_DEBT_ERROR": ("Net debt arithmetic error: Net Debt = Gross Debt - Cash."),
     "EQ_BRIDGE_ARITHMETIC": (
         "Equity value arithmetic error: Equity Value = Enterprise Value - Net Debt."
     ),
@@ -113,9 +81,7 @@ DIAGNOSTIC_INVARIANT_GUIDES: dict[str, str] = {
         "Non-meaningful (N/M) peer multiple (negative EBITDA) must be excluded from "
         "median calculation, not coerced to 0.0x."
     ),
-    "COMPS_MEDIAN_ERROR": (
-        "Peer multiple median calculated incorrectly across valid peers."
-    ),
+    "COMPS_MEDIAN_ERROR": ("Peer multiple median calculated incorrectly across valid peers."),
     "COMPS_EV_ARITHMETIC": (
         "Comps EV arithmetic error: Comps EV = Median Multiple * Target EBITDA."
     ),
@@ -131,12 +97,8 @@ DIAGNOSTIC_INVARIANT_GUIDES: dict[str, str] = {
     "CONSISTENCY_HEADLINE_COMPS": (
         "Headline Comps outputs must match detailed Comps model values exactly."
     ),
-    "CONSISTENCY_EV_BRIDGE": (
-        "Equity bridge Enterprise Value must match DCF Enterprise Value."
-    ),
-    "CONSISTENCY_SHARES": (
-        "Diluted shares count must be identical across all model sections."
-    ),
+    "CONSISTENCY_EV_BRIDGE": ("Equity bridge Enterprise Value must match DCF Enterprise Value."),
+    "CONSISTENCY_SHARES": ("Diluted shares count must be identical across all model sections."),
 }
 
 
