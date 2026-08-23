@@ -118,11 +118,11 @@ uv run ib-eval baseline \
   --execute
 ```
 
-> **Note on Output Directories**: In structured mode (`--mode structured`), results automatically default to `results/milestone-2/`. Supplying an explicit `--output <dir>` overrides this default.
+> **Note on Output Directories**: In structured mode (`--mode structured`), results automatically default to `results/<case_id>/<stage>/` (e.g. `results/northstar-v1/milestone-2/` or `results/meridian-v1/milestone-4d-structured/`). Supplying an explicit `--output <dir>` overrides this default.
 
 ### Running the Full 10-Run Benchmark
 
-For statistically robust evaluation (defaults to `results/milestone-2/`):
+For statistically robust evaluation (defaults to `results/northstar-v1/milestone-2/`):
 
 ```bash
 uv run ib-eval baseline \

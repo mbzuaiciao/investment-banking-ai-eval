@@ -418,7 +418,7 @@ def test_cli_baseline_repair_default_output() -> None:
     assert result.exit_code == 0
     assert "Milestone 3: Deterministic Feedback Repair" in result.output
     assert "Mode:        repair" in result.output
-    assert "Output Dir:  results/milestone-3" in result.output
+    assert "Output Dir:  results/northstar-v1/milestone-3" in result.output
     assert "--mode repair" in result.output
 
 

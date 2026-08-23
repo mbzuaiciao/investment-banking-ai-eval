@@ -48,7 +48,7 @@ class ControlledFixture:
         return Submission.model_validate_json(fixture_path.read_text())
 
 
-# Canonical list of the 10 Milestone 0 corrupted fixtures
+# Canonical list of the 10 Milestone 0 Northstar corrupted fixtures
 CONTROLLED_FIXTURES: list[ControlledFixture] = [
     ControlledFixture(
         fixture_id="c01",
@@ -150,20 +150,133 @@ CONTROLLED_FIXTURES: list[ControlledFixture] = [
     ),
 ]
 
+# Canonical list of the 10 Milestone 4B Meridian corrupted fixtures
+MERIDIAN_CONTROLLED_FIXTURES: list[ControlledFixture] = [
+    ControlledFixture(
+        fixture_id="m01",
+        dir_name="m01_arr_revenue_confusion",
+        name="ARR / GAAP Revenue Confusion",
+        expected_diagnostic="REV_ARR_CONFUSION",
+        category=ErrorCategory.VALUATION,
+        difficulty=DifficultyType.PROPAGATING,
+        description=(
+            "Compounding growth off FY2025 ending ARR ($880.0M) instead of GAAP revenue ($760.0M)."
+        ),
+    ),
+    ControlledFixture(
+        fixture_id="m02",
+        dir_name="m02_deferred_rev_reversed",
+        name="Deferred Revenue Sign Reversal",
+        expected_diagnostic="WC_DEFERRED_REV_REVERSED",
+        category=ErrorCategory.ACCOUNTING_BRIDGE,
+        difficulty=DifficultyType.PROPAGATING,
+        description="Treating negative NWC as cash drain rather than cash source.",
+    ),
+    ControlledFixture(
+        fixture_id="m03",
+        dir_name="m03_software_double_counted",
+        name="Capitalized Software Double-Counting",
+        expected_diagnostic="FCF_SOFTWARE_DOUBLE_COUNTED",
+        category=ErrorCategory.FORMULA,
+        difficulty=DifficultyType.PROPAGATING,
+        description="Double-counting capitalized internal-use software in capex.",
+    ),
+    ControlledFixture(
+        fixture_id="m04",
+        dir_name="m04_net_cash_reversed",
+        name="Net Cash Bridge Sign Inversion",
+        expected_diagnostic="EQ_BRIDGE_NET_CASH_REVERSED",
+        category=ErrorCategory.ACCOUNTING_BRIDGE,
+        difficulty=DifficultyType.PROPAGATING,
+        description="Subtracting net cash from EV instead of adding.",
+    ),
+    ControlledFixture(
+        fixture_id="m05",
+        dir_name="m05_sbc_ebitda_inconsistency",
+        name="SBC Omission in GAAP EBIT",
+        expected_diagnostic="SBC_EBITDA_INCONSISTENCY",
+        category=ErrorCategory.ACCOUNTING_BRIDGE,
+        difficulty=DifficultyType.PROPAGATING,
+        description=(
+            "Omitting non-cash stock-based compensation deduction when bridging "
+            "from Adjusted EBITDA to GAAP EBIT."
+        ),
+    ),
+    ControlledFixture(
+        fixture_id="m06",
+        dir_name="m06_basic_shares_used",
+        name="Basic Common Shares Used",
+        expected_diagnostic="SHARES_BASIC_USED",
+        category=ErrorCategory.VALUATION,
+        difficulty=DifficultyType.PROPAGATING,
+        description="Using 80.0M basic common shares instead of 88.0M fully diluted shares.",
+    ),
+    ControlledFixture(
+        fixture_id="m07",
+        dir_name="m07_midyear_convention_error",
+        name="Terminal Value Mid-Year Convention Error",
+        expected_diagnostic="DCF_MIDYEAR_CONVENTION_ERROR",
+        category=ErrorCategory.VALUATION,
+        difficulty=DifficultyType.PROPAGATING,
+        description=(
+            "Discounting horizon terminal value at mid-year t=4.5 instead of year-end t=5.0."
+        ),
+    ),
+    ControlledFixture(
+        fixture_id="m08",
+        dir_name="m08_nm_fcf_coerced_zero",
+        name="Negative FCF Multiple Coerced to Zero",
+        expected_diagnostic="COMPS_NM_FCF_COERCED_ZERO",
+        category=ErrorCategory.COMPS,
+        difficulty=DifficultyType.LOCAL,
+        description=(
+            "Coercing Strata Platform's negative FCF multiple to zero instead of excluding."
+        ),
+    ),
+    ControlledFixture(
+        fixture_id="m09",
+        dir_name="m09_fabricated_guidance",
+        name="Fabricated Explicit Guidance Claim",
+        expected_diagnostic="SF_GUIDANCE_FABRICATED",
+        category=ErrorCategory.SOURCE_FIDELITY,
+        difficulty=DifficultyType.LOCAL,
+        description=(
+            "Classifying analyst-assumed 2028-2030 trajectory as explicit management guidance."
+        ),
+    ),
+    ControlledFixture(
+        fixture_id="m10",
+        dir_name="m10_pretax_wacc",
+        name="Pre-Tax Cost of Debt in WACC",
+        expected_diagnostic="WACC_PRETAX_DEBT",
+        category=ErrorCategory.FORMULA,
+        difficulty=DifficultyType.PROPAGATING,
+        description=(
+            "Using 5.50% pre-tax cost of debt in WACC without applying 25% corporate tax shield."
+        ),
+    ),
+]
+
 
 def resolve_fixtures(selector: str, corrupted_dir: Path) -> list[ControlledFixture]:
     """Resolve fixture selector ('all' or comma-separated IDs/names) to ControlledFixtures."""
+    fixture_pool = (
+        MERIDIAN_CONTROLLED_FIXTURES
+        if "meridian" in str(corrupted_dir).lower()
+        else CONTROLLED_FIXTURES
+    )
+
     cleaned = selector.strip()
     if cleaned.lower() == "all":
-        return list(CONTROLLED_FIXTURES)
+        return list(fixture_pool)
 
     tokens = [t.strip().lower() for t in cleaned.split(",") if t.strip()]
     if not tokens:
-        return list(CONTROLLED_FIXTURES)
+        return list(fixture_pool)
 
     resolved: list[ControlledFixture] = []
     available_map: dict[str, ControlledFixture] = {}
-    for f in CONTROLLED_FIXTURES:
+    for f in fixture_pool:
         available_map[f.fixture_id.lower()] = f
         available_map[f.dir_name.lower()] = f
 

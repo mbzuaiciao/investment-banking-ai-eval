@@ -10,6 +10,7 @@ import click
 from dotenv import load_dotenv
 
 from ib_eval.case import load_case
+from ib_eval.paths import resolve_default_output_dir
 from ib_eval.schemas import Submission
 from ib_eval.scoring import grade_submission
 
@@ -228,15 +229,11 @@ def baseline(
     case_obj = load_case(case_path)
     mode_normalized = mode.lower()
 
-    # Resolve output directory based on mode if not explicitly provided
+    # Resolve output directory based on case and mode if not explicitly provided
     if output_dir is not None:
         out_path = Path(output_dir)
-    elif mode_normalized == "repair":
-        out_path = Path("results/milestone-3")
-    elif mode_normalized == "structured":
-        out_path = Path("results/milestone-2")
     else:
-        out_path = Path("results/milestone-1")
+        out_path = resolve_default_output_dir(case_obj.meta.case_id, mode_normalized)
 
     thinking_bool: bool | None = None
     if thinking is not None:
@@ -260,12 +257,20 @@ def baseline(
     )
 
     # Cost / Confirmation guardrail
-    if mode_normalized == "repair":
-        milestone_label = "Milestone 3: Deterministic Feedback Repair"
-    elif mode_normalized == "structured":
-        milestone_label = "Milestone 2: Structured Analyst"
+    if "meridian" in case_obj.meta.case_id.lower():
+        if mode_normalized == "repair":
+            milestone_label = "Milestone 4E: Meridian Deterministic Feedback Repair"
+        elif mode_normalized == "structured":
+            milestone_label = "Milestone 4D: Meridian Structured Analyst"
+        else:
+            milestone_label = "Milestone 4C: Meridian Direct Baseline"
     else:
-        milestone_label = "Milestone 1: Direct Analyst Baseline"
+        if mode_normalized == "repair":
+            milestone_label = "Milestone 3: Deterministic Feedback Repair"
+        elif mode_normalized == "structured":
+            milestone_label = "Milestone 2: Structured Analyst"
+        else:
+            milestone_label = "Milestone 1: Direct Analyst Baseline"
     click.echo("==================================================")
     click.echo(f"  IB-Eval — {milestone_label}")
     click.echo("==================================================")
@@ -472,10 +477,19 @@ def repair_benchmark(
         raise click.ClickException(f"Case directory not found: {case_path}")
 
     case_obj = load_case(case_path)
-    out_path = Path(output_dir) if output_dir is not None else Path("results/milestone-3b")
+    if output_dir is not None:
+        out_path = Path(output_dir)
+    else:
+        out_path = resolve_default_output_dir(case_obj.meta.case_id, "controlled-repair")
+
+    corrupted_dir = (
+        Path(__file__).parent.parent.parent / "examples" / "meridian_corrupted"
+        if "meridian" in case_obj.meta.case_id.lower()
+        else _CORRUPTED_DIR
+    )
 
     try:
-        fixtures_to_run = resolve_fixtures(fixtures_selector, _CORRUPTED_DIR)
+        fixtures_to_run = resolve_fixtures(fixtures_selector, corrupted_dir)
     except ValueError as exc:
         raise click.ClickException(str(exc)) from exc
 
@@ -501,8 +515,13 @@ def repair_benchmark(
     )
 
     fixture_ids = [f.fixture_id for f in fixtures_to_run]
+    if "meridian" in case_obj.meta.case_id.lower():
+        milestone_label = "Milestone 4E: Meridian Controlled Repair Benchmark"
+    else:
+        milestone_label = "Milestone 3B: Controlled Repair Benchmark"
+
     click.echo("==================================================")
-    click.echo("  IB-Eval — Milestone 3B: Controlled Repair Benchmark")
+    click.echo(f"  IB-Eval — {milestone_label}")
     click.echo("==================================================")
     click.echo(f"  Case:        {case_obj.meta.case_id} ({case_obj.meta.company})")
     click.echo("  Mode:        controlled-repair")

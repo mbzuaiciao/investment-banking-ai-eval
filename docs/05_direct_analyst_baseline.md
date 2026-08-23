@@ -101,7 +101,7 @@ Output:
   Provider:    deepseek
   Model:       deepseek-v4-flash
   Trials:      3
-  Output Dir:  results/milestone-1
+  Output Dir:  results/northstar-v1/milestone-1
   Thinking:    on
   Reasoning:   high
 --------------------------------------------------
@@ -113,7 +113,7 @@ Output:
     uv run ib-eval baseline --case northstar-v1 --provider deepseek --model deepseek-v4-flash --thinking on --reasoning-effort high --runs 3 --execute
 ```
 
-> **Note on Output Directories**: In direct mode (`--mode direct`), artifacts default to `results/milestone-1/`. An explicitly provided `--output <path>` overrides this default.
+> **Note on Output Directories**: In direct mode (`--mode direct`), artifacts default to case-scoped `results/<case_id>/<stage>/` (e.g. `results/northstar-v1/milestone-1/` or `results/meridian-v1/milestone-4c-direct/`). An explicitly provided `--output <path>` overrides this default.
 
 ### Executing Live Trials
 When ready, add the `--execute` flag:

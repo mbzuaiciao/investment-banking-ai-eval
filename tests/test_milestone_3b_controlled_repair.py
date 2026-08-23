@@ -333,7 +333,7 @@ def test_cli_repair_benchmark_dry_run() -> None:
 
     assert result.exit_code == 0
     assert "Milestone 3B: Controlled Repair Benchmark" in result.output
-    assert "Output Dir:  results/milestone-3b" in result.output
+    assert "Output Dir:  results/northstar-v1/milestone-3b" in result.output
     assert "Fixtures:    3 (c02, c08, c10)" in result.output
     assert "--fixtures c02,c08,c10" in result.output
 

@@ -144,22 +144,23 @@ Every trial preserves both initial corrupted inputs and repaired outputs in its 
 
 ```text
 results/
-└── milestone-3b/
-    └── m3b-controlled-repair-deepseek-deepseek-v4-flash-thinking-high-20260822_190000/
-        ├── config.json
-        ├── summary.json
-        ├── summary.md
-        ├── c01/
-        │   ├── initial_submission.json
-        │   ├── initial_grade.json
-        │   ├── repair_prompt.txt
-        │   ├── repair_raw_response.txt
-        │   ├── repaired_submission.json
-        │   ├── repaired_grade.json
-        │   └── metadata.json
-        ├── c02/
-        ├── c03/
-        └── ...
+└── northstar-v1/
+    └── milestone-3b/
+        └── m3b-controlled-repair-deepseek-deepseek-v4-flash-thinking-high-20260822_190000/
+            ├── config.json
+            ├── summary.json
+            ├── summary.md
+            ├── c01/
+            │   ├── initial_submission.json
+            │   ├── initial_grade.json
+            │   ├── repair_prompt.txt
+            │   ├── repair_raw_response.txt
+            │   ├── repaired_submission.json
+            │   ├── repaired_grade.json
+            │   └── metadata.json
+            ├── c02/
+            ├── c03/
+            └── ...
 ```
 
 ---

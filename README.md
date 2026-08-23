@@ -348,29 +348,30 @@ Optional parameters:
 - `--reasoning-effort [low|medium|high]`: Level of reasoning effort when thinking is enabled
 - `--temperature <float>`: Sampling temperature (e.g. `0.2`)
 - `--seed <int>`: Random seed
-- `--output <dir>`: Custom output folder (defaults to `results/milestone-1` for direct, `results/milestone-2` for structured; explicit `--output` overrides either default)
+- `--output <dir>`: Custom output folder (defaults to case-scoped directory: `results/<case_id>/<stage>`; explicit `--output` overrides defaults)
 
 ### Experiment Artifacts
 
-Each experiment creates a self-contained directory:
+Each experiment creates a self-contained directory under the case-scoped hierarchy:
 
 ```text
 results/
-└── milestone-1/
-    └── m1-direct-openai-<model-name>-20260821_120000/
-        ├── config.json
-        ├── prompt.txt
-        ├── run_001/
-        │   ├── raw_response.txt
-        │   ├── submission.json
-        │   ├── grade.json
-        │   └── metadata.json
-        ├── run_002/
-        │   ├── raw_response.txt
-        │   ├── parse_error.json
-        │   └── metadata.json
-        ├── summary.json
-        └── summary.md
+└── northstar-v1/
+    └── milestone-1/
+        └── m1-direct-openai-<model-name>-20260821_120000/
+            ├── config.json
+            ├── prompt.txt
+            ├── run_001/
+            │   ├── raw_response.txt
+            │   ├── submission.json
+            │   ├── grade.json
+            │   └── metadata.json
+            ├── run_002/
+            │   ├── raw_response.txt
+            │   ├── parse_error.json
+            │   └── metadata.json
+            ├── summary.json
+            └── summary.md
 ```
 
 `summary.json` and `summary.md` aggregate:

@@ -379,7 +379,7 @@ def test_cli_compare_command(tmp_path: Path) -> None:
 
 
 def test_cli_baseline_direct_default_output() -> None:
-    """CLI baseline direct mode defaults to results/milestone-1."""
+    """CLI baseline direct mode defaults to results/northstar-v1/milestone-1."""
     runner = CliRunner()
     result = runner.invoke(
         main,
@@ -398,11 +398,11 @@ def test_cli_baseline_direct_default_output() -> None:
         ],
     )
     assert result.exit_code == 0
-    assert "Output Dir:  results/milestone-1" in result.output
+    assert "Output Dir:  results/northstar-v1/milestone-1" in result.output
 
 
 def test_cli_baseline_structured_default_output() -> None:
-    """CLI baseline structured mode defaults to results/milestone-2."""
+    """CLI baseline structured mode defaults to results/northstar-v1/milestone-2."""
     runner = CliRunner()
     result = runner.invoke(
         main,
@@ -421,7 +421,7 @@ def test_cli_baseline_structured_default_output() -> None:
         ],
     )
     assert result.exit_code == 0
-    assert "Output Dir:  results/milestone-2" in result.output
+    assert "Output Dir:  results/northstar-v1/milestone-2" in result.output
 
 
 def test_cli_baseline_structured_explicit_output_override() -> None:

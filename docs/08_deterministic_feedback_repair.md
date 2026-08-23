@@ -172,7 +172,7 @@ uv run ib-eval baseline \
   --execute
 ```
 
-> **Default Output Directory**: In repair mode (`--mode repair`), results automatically save to `results/milestone-3/`. Use `--output <custom_dir>` to specify an alternative path.
+> **Default Output Directory**: In repair mode (`--mode repair`), results automatically save to `results/<case_id>/<stage>/` (e.g. `results/northstar-v1/milestone-3/` or `results/meridian-v1/milestone-4e-repair/`). Use `--output <custom_dir>` to specify an alternative path.
 
 ---
 
