@@ -59,6 +59,7 @@ class TrialMetadata:
     score: float | None = None
     hard_failure_count: int = 0
     hard_failure_codes: list[str] = field(default_factory=list[str])
+    prompt_version: str | None = None
 
     # Milestone 3 Repair-specific fields
     initial_parsed_successfully: bool = False

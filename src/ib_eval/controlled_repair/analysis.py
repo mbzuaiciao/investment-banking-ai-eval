@@ -30,6 +30,7 @@ class ControlledFixtureTrialResult(BaseModel):
     repair_success: bool = False
     partial_repair: bool = False
     outcome: str = "persistent"  # "success", "partial", "persistent", "parse_failure"
+    prompt_version: str | None = None
     latency_seconds: float | None = None
     token_usage: dict[str, int] | None = None
 

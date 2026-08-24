@@ -144,14 +144,28 @@ The benchmark includes a side-by-side comparison utility (`ib-eval compare`):
 
 ```bash
 uv run ib-eval compare \
-  results/milestone-1/m1-direct-deepseek-deepseek_v4_flash-thinking-high-... \
-  results/milestone-2/m2-structured-deepseek-deepseek_v4_flash-thinking-high-...
+  results/northstar-v1/milestone-1/m1-direct-deepseek-deepseek-v4-flash-thinking-high-... \
+  results/northstar-v1/milestone-2/m2-structured-deepseek-deepseek-v4-flash-thinking-high-...
 ```
 
 The comparison command outputs:
 - **Summary Metrics Delta**: Mean score, median score, score standard deviation, parse rate, and hard-failure rate.
 - **Diagnostic Run-Level Incidence Delta**: Shifts in specific failure modes (e.g., whether `TV_NOT_DISCOUNTED` dropped from 80% to 0%).
 - **Grader Pass Rate Delta**: Individual pass rate improvements across all 10 deterministic graders.
+
+---
+
+## 6. Prompt Generalization (structured_v1 vs. structured_v2)
+
+During cross-case expansion to Meridian Cloud Systems (`meridian-v1`), audit of the structured baseline revealed a prompt-induced failure mode in `structured_v1`:
+- **`structured_v1` (Historical)**: Hardcoded Northstar's simple accounting equation `EBIT_t = EBITDA_t - DA_t` into Stage 3 and Stage 8, as well as `Median Multiple * Target EBITDA` in Stage 7. On Meridian (where reported EBITDA is Adjusted EBITDA that adds back non-cash SBC), this Northstar equation explicitly instructed the model to omit SBC, causing a 10/10 `SBC_EBITDA_INCONSISTENCY` hard-failure rate.
+- **`structured_v2` (Generalized)**: Replaced case-specific equations with generalized financial workflow instructions:
+  - *Stage 2*: Formalize operating profitability and reconciliation assumptions required to bridge reported metrics to GAAP EBIT.
+  - *Stage 3*: Reconcile reported profitability to GAAP EBIT using the case-specific accounting bridge documented in the source packet.
+  - *Stage 7*: Identify the primary valuation multiple and target metric from sources (e.g. EV / Revenue or EV / EBITDA).
+  - *Stage 8*: Verify that reported profitability reconciles to GAAP EBIT using all case-relevant adjustments.
+
+All historical `structured_v1` experiment artifacts are preserved untouched as evidence of prompt-induced error. Experiments run after this update record `prompt_version = "structured_v2"`.
 
 ---
 

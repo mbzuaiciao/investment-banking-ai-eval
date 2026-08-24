@@ -21,6 +21,8 @@ from ib_eval.baseline.interface import (
     TrialResult,
 )
 from ib_eval.baseline.prompt import (
+    DIRECT_PROMPT_VERSION,
+    STRUCTURED_PROMPT_VERSION,
     build_analyst_prompt,
     build_repair_prompt,
     build_structured_analyst_prompt,
@@ -178,6 +180,11 @@ class DirectAnalyst:
                 (trial_dir / "parse_error.json").write_text(json.dumps(parse_payload, indent=2))
 
         # 4. Save metadata
+        prompt_version = (
+            STRUCTURED_PROMPT_VERSION
+            if config.mode in ("structured", "repair")
+            else DIRECT_PROMPT_VERSION
+        )
         metadata = TrialMetadata(
             run_index=run_index,
             provider=config.provider,
@@ -194,6 +201,7 @@ class DirectAnalyst:
             score=score,
             hard_failure_count=len(hard_failure_codes),
             hard_failure_codes=hard_failure_codes,
+            prompt_version=prompt_version,
             git_commit=get_git_commit(),
         )
 
@@ -443,6 +451,7 @@ class DirectAnalyst:
                 repaired_hard_failure_codes=initial_hf_codes,
                 persistent_diagnostics=all_initial_diagnostics,
                 repair_attempted=True,
+                prompt_version=STRUCTURED_PROMPT_VERSION,
                 git_commit=get_git_commit(),
             )
             (trial_dir / "metadata.json").write_text(json.dumps(metadata.__dict__, indent=2))
@@ -498,6 +507,7 @@ class DirectAnalyst:
                 repaired_hard_failure_codes=initial_hf_codes,
                 persistent_diagnostics=all_initial_diagnostics,
                 repair_attempted=True,
+                prompt_version=STRUCTURED_PROMPT_VERSION,
                 git_commit=get_git_commit(),
             )
             (trial_dir / "metadata.json").write_text(json.dumps(metadata.__dict__, indent=2))
@@ -513,22 +523,23 @@ class DirectAnalyst:
             )
 
         # Repaired response successfully parsed
+        repaired_grade = grade_submission(repaired_sub, case)
+        repaired_score = repaired_grade.total_score
+        repaired_hf_codes = [f.diagnostic_code for f in repaired_grade.hard_failures]
+        all_repaired_diagnostics = [
+            f.diagnostic_code
+            for g_res in repaired_grade.grader_results
+            for f in g_res.failures
+        ]
+
         (trial_dir / "repaired_submission.json").write_text(
             json.dumps(repaired_sub.model_dump(), indent=2)
         )
         (trial_dir / "submission.json").write_text(json.dumps(repaired_sub.model_dump(), indent=2))
-
-        repaired_grade = grade_submission(repaired_sub, case)
         (trial_dir / "repaired_grade.json").write_text(
             json.dumps(repaired_grade.model_dump(), indent=2)
         )
         (trial_dir / "grade.json").write_text(json.dumps(repaired_grade.model_dump(), indent=2))
-
-        repaired_score = repaired_grade.total_score
-        repaired_hf_codes = [f.diagnostic_code for f in repaired_grade.hard_failures]
-        all_repaired_diagnostics = [
-            f.diagnostic_code for r in repaired_grade.grader_results for f in r.failures
-        ]
 
         set_init = set(all_initial_diagnostics)
         set_rep = set(all_repaired_diagnostics)
@@ -571,6 +582,7 @@ class DirectAnalyst:
             persistent_diagnostics=persistent_codes,
             new_diagnostics=new_codes,
             repair_attempted=True,
+            prompt_version=STRUCTURED_PROMPT_VERSION,
             git_commit=get_git_commit(),
         )
 
@@ -598,7 +610,7 @@ class DirectAnalyst:
         run_index: int,
         trial_dir: Path,
     ) -> TrialResult:
-        """Dispatch trial execution based on configured mode."""
+        """Route to standard or repair trial based on config mode."""
         if config.mode == "repair":
             return self.run_repair_trial(
                 prompt=prompt,
@@ -674,8 +686,10 @@ def run_baseline_experiment(
     # 1. Build and save initial prompt based on mode
     if config.mode in ("structured", "repair"):
         prompt = build_structured_analyst_prompt(case)
+        prompt_version = STRUCTURED_PROMPT_VERSION
     else:
         prompt = build_analyst_prompt(case)
+        prompt_version = DIRECT_PROMPT_VERSION
     (exp_dir / "prompt.txt").write_text(prompt)
 
     # 2. Save experiment configuration
@@ -690,6 +704,7 @@ def run_baseline_experiment(
         "seed": config.seed,
         "thinking": config.thinking,
         "reasoning_effort": config.reasoning_effort,
+        "prompt_version": prompt_version,
         "timestamp": datetime.now(UTC).isoformat(),
         "git_commit": get_git_commit(),
     }

@@ -586,7 +586,7 @@ def repair_benchmark(
         analyst_provider=analyst,
         config=config,
         fixtures=fixtures_to_run,
-        corrupted_dir=_CORRUPTED_DIR,
+        corrupted_dir=corrupted_dir,
         output_dir=out_path,
     )
 

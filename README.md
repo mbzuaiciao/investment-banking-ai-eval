@@ -18,23 +18,28 @@ The tutorial covers both the core investment-banking concepts (DCF math, WACC de
 
 ---
 
-## Experimental Results
+## Experimental Results & Cross-Case Findings
 
-Empirical results across Milestones 1–3B on the Northstar benchmark:
+Empirical evaluation across two distinct corporate valuation profiles (**Northstar Components** [Industrial] and **Meridian Cloud Systems** [B2B SaaS]):
 
-| Experiment | Workflow Configuration | Sample Size | Parse Success | Mean Score | Hard-Failure Rate | Key Empirical Result |
+| Case | Milestone & Workflow | Runs | Parse Rate | Mean Score | Hard-Failure Rate | Key Empirical Result |
 |---|---|:---:|:---:|:---:|:---:|---|
-| **M1 Direct (Thinking Off)** | Zero reasoning; direct prompt | 10 runs | 90% (9/10) | 90.5 | 100% *(of parsed)* | Broad formula & arithmetic failures; 0% pass on FCF & TV |
-| **M1 Direct (Thinking High)** | High reasoning; direct prompt | 10 runs | 100% (10/10) | 97.2 | 100% | Core arithmetic improved; systematic TV discounting error on 10/10 runs |
-| **M2 Structured Workflow** | High reasoning; 8-stage decomposition | 10 runs | 100% (10/10) | 99.0 | 30% | TV discounting defect eliminated (100% pass); hard failures reduced to 30% |
-| **M3 Feedback Repair** | Structured prompt + conditional repair | 10 runs | 100% (10/10) | 98.8 *(final)* | 0% *(final)* | 9 clean runs skipped; 1/1 natural failure cleanly repaired ($n=1$) |
-| **M3B Controlled Repair** | 10 Corrupted fixtures + 1-shot repair | 10 fixtures | 100% (10/10) | 100.0 *(final)* | 0% *(final)* | 10/10 target errors resolved; 0 regressions across local & propagating tiers |
+| **Northstar** | **M1 Direct (Thinking High)** | 10 | 100% | 97.2 | 100% | Arithmetic stabilized; 10/10 omitted TV discounting (`TV_PV_ERROR`) |
+| **Northstar** | **M2 Structured Workflow** | 10 | 100% | 99.0 | 30% | TV discounting defect eliminated (100% pass); 3/10 residual errors |
+| **Northstar** | **M3B Controlled Repair** | 10 | 100% | **100.0** | **0%** | **10/10 target errors resolved; 10/10 fully clean repairs (0 regressions)** |
+| **Meridian** | **M4C Direct (Thinking High)** | 10 | 100% | 85.5 | 100% | Systematic comps (10/10) & UFCF (8/10) failures; TV & WACC errors |
+| **Meridian** | **M4D Structured (`structured_v2`)** | 10 | 100% | 93.7 | 100% | Generalized workflow; resolved prompt-induced SBC errors |
+| **Meridian** | **M4E Natural Repair** | 10 | 100% | 98.9 | 40% | Mean +3.6; hard-failure rate 70% $\rightarrow$ 40%; clean runs 3 $\rightarrow$ 6 |
+| **Meridian** | **M4E Controlled Repair** | 10 | 100% | **99.8** | **10%** | **10/10 target errors resolved; 9/10 fully clean repairs (1 partial)** |
 
 ### Key Findings at a Glance:
-1. **Reasoning alone does not eliminate systematic defects**: Extended thinking lifted mean score to 97.2 but still produced valuation-breaking TV discounting errors on 100% of direct prompt runs.
-2. **Explicit domain workflow eliminates structural omissions**: Decomposing analysis into 8 financial stages lifted TV pass rates from 0% to 100% and reduced hard failures to 30%.
-3. **Deterministic invariant feedback enables 1-shot self-repair**: Invariant diagnostics without gold leakage cleanly repaired residual errors in live generation and across all 10 controlled failure modes.
-4. **Aggregate scores conceal valuation-breaking flaws**: Models scoring in the high 90s still embedded $200M+ enterprise value errors.
+1. **Reasoning improved local accuracy but did not remove hard failures**: Extended thinking compressed calculation variance, but models still exhibited valuation-breaking domain omissions (e.g. TV discounting on Northstar, SBC omission on Meridian).
+2. **Structured workflows improved stability but can encode systematic errors**: Decomposing analysis into 8 financial stages eliminated omissions, but prompts must generalize accounting bridges rather than hardcoding single-case formulas.
+3. **Deterministic verification exposed errors hidden by high aggregate scores**: In multiple runs, models achieved perfect internal reconciliation consistency while embedding severe financial defects ($>\$100\text{M}$ SBC omissions or inverted net cash signs).
+4. **One repair pass resolved 10/10 controlled target failures on both cases**: Targeted compiler diagnostics without gold leakage enabled frontier reasoning models to correct severe multi-step cascading errors.
+5. **Fully clean controlled repair achieved 95% overall**: 10/10 clean repairs on Northstar, 9/10 clean repairs on Meridian (14/15 propagating errors and 5/5 local errors cleanly resolved).
+
+> **Architectural Principle**: *Parsing validates representability; deterministic graders validate financial correctness.*
 
 📖 **Read the full research synthesis & methodology**: **[Chapter 10 — Experimental Results & Research Synthesis](docs/10_results_and_findings.md)**  
 📂 **Inspect raw experiment artifacts**: **[results/README.md](results/README.md)**
@@ -442,6 +447,9 @@ uv run ib-eval compare \
 ```
 
 The report highlights deltas in mean/median scores, standard deviation, parse rates, hard-failure rates, grader pass rates, and individual diagnostic run incidence.
+
+> [!NOTE]
+> **Structured Workflow Versioning (`structured_v2`)**: The structured prompt is case-generalized (`structured_v2`), guiding the candidate model through 8 explicit financial reasoning stages (reconciling reported metrics to GAAP EBIT per case accounting bridges and applying peer multiples to the case-defined primary target metric) without hardcoding single-case formulas. Historical single-case experiments (`structured_v1`) remain preserved in `results/`.
 
 ---
 

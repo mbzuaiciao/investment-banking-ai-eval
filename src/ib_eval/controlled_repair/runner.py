@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from ib_eval.baseline.interface import Analyst, ProviderConfig
-from ib_eval.baseline.prompt import build_repair_prompt
+from ib_eval.baseline.prompt import STRUCTURED_PROMPT_VERSION, build_repair_prompt
 from ib_eval.baseline.runner import (
     get_git_commit,
     parse_submission_response,
@@ -85,6 +85,7 @@ def run_controlled_repair_benchmark(
         "seed": config.seed,
         "thinking": config.thinking,
         "reasoning_effort": config.reasoning_effort,
+        "prompt_version": STRUCTURED_PROMPT_VERSION,
         "timestamp": datetime.now(UTC).isoformat(),
         "git_commit": get_git_commit(),
     }
@@ -172,6 +173,7 @@ def run_controlled_repair_benchmark(
                 repair_success=False,
                 partial_repair=False,
                 outcome="parse_failure",
+                prompt_version=STRUCTURED_PROMPT_VERSION,
                 latency_seconds=latency,
                 token_usage=usage,
             )
@@ -207,6 +209,7 @@ def run_controlled_repair_benchmark(
                     repair_success=False,
                     partial_repair=False,
                     outcome="parse_failure",
+                    prompt_version=STRUCTURED_PROMPT_VERSION,
                     latency_seconds=latency,
                     token_usage=usage,
                 )
@@ -255,6 +258,7 @@ def run_controlled_repair_benchmark(
                     repair_success=is_success,
                     partial_repair=is_partial,
                     outcome=outcome,
+                    prompt_version=STRUCTURED_PROMPT_VERSION,
                     latency_seconds=latency,
                     token_usage=usage,
                 )

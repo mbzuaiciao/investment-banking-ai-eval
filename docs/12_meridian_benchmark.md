@@ -114,7 +114,11 @@ All 10 graders in `src/ib_eval/graders/` evaluate both Northstar and Meridian su
 - **Parsing Validates Representability**: Structural validation ensures types, enums, and required fields exist without rejecting candidate models for mathematically incorrect inputs.
 - **Graders Validate Financial Correctness**: Deterministic financial rules (WACC weights, equity bridge reconciliation, EBITDA arithmetic) are evaluated by deterministic graders, ensuring that financially erroneous submissions remain gradeable and emit clear diagnostic codes.
 
+### Structured Workflow Generalization (`structured_v2`)
+- **Audit Finding**: The initial `structured_v1` prompt hardcoded Northstar-specific equations (`EBIT_t = EBITDA_t - DA_t` and `Median Multiple * Target EBITDA`). On Meridian, where EBITDA is Adjusted EBITDA, this induced a 10/10 `SBC_EBITDA_INCONSISTENCY` hard-failure rate.
+- **Generalization**: `structured_v2` guides the model to reconcile reported profitability to GAAP EBIT using source-defined bridges and apply the primary multiple to the matching target metric, preserving benchmark purity without hardcoding Meridian values.
+
 Regression testing verifies that:
 1. `uv run ib-eval grade examples/gold_submission/submission.json` $\rightarrow$ **100.0 / 100 (A+)**, 0 hard failures.
 2. `uv run ib-eval grade examples/meridian_gold_submission/submission.json` $\rightarrow$ **100.0 / 100 (A+)**, 0 hard failures.
-3. 209 / 209 unit tests pass in under 2 seconds.
+3. 212 / 212 unit tests pass in under 2 seconds.
