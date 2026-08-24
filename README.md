@@ -3,9 +3,47 @@
 > **The benchmark does not ask only whether an AI produced the right valuation.
 > It asks whether the financial process producing that valuation is defensible.**
 
-A deterministic, typed evaluation harness for assessing AI systems on
-investment-banking financial analysis tasks. Built around the fictional
-**Northstar Components, Inc.** case.
+A deterministic, typed evaluation harness and research benchmark for measuring AI reliability on complex corporate valuation and financial modeling tasks. Evaluated across two contrasting corporate profiles: **Northstar Components, Inc.** (mature industrial manufacturing) and **Meridian Cloud Systems, Inc.** (high-growth B2B SaaS).
+
+---
+
+## System Architecture & Evaluation Pipeline
+
+```text
+               CASE EVIDENCE PACKET (Sources, Financials, Transcripts)
+                                        │
+                                        ▼
+                   AI MODEL ANALYST (Direct or Structured Prompt)
+                                        │
+                                        ▼
+                      PYDANTIC SUBMISSION SCHEMA PARSER
+                     (Validates structural representability)
+                                        │
+                                        ▼
+                       10 DETERMINISTIC FINANCIAL GRADERS
+                     (Validates accounting & valuation rules)
+                                        │
+                    ┌───────────────────┴───────────────────┐
+                    ▼                                       ▼
+           [0 Hard Failures]                       [≥ 1 Invariant Violated]
+           (Clean Completion)                               │
+                    │                                       ▼
+                    │                          COMPILER DIAGNOSTIC FEEDBACK
+                    │                        (Metric, Observed, Violated Rule)
+                    │                                       │
+                    │                                       ▼
+                    │                            1-SHOT SELF-REPAIR TURN
+                    │                        (Recomputes Cascading Schedules)
+                    │                                       │
+                    │                                       ▼
+                    │                           DETERMINISTIC RE-GRADING
+                    │                        (Checks Resolution & Regressions)
+                    │                                       │
+                    └───────────────────┬───────────────────┘
+                                        ▼
+                       FINAL BENCHMARK EVALUATION REPORT
+                    (Score, Diagnostic Log, Invariant Audit)
+```
 
 ---
 
@@ -35,9 +73,9 @@ Empirical evaluation across two distinct corporate valuation profiles (**Northst
 ### Key Findings at a Glance:
 1. **Reasoning improved local accuracy but did not remove hard failures**: Extended thinking compressed calculation variance, but models still exhibited valuation-breaking domain omissions (e.g. TV discounting on Northstar, SBC omission on Meridian).
 2. **Structured workflows improved stability but can encode systematic errors**: Decomposing analysis into 8 financial stages eliminated omissions, but prompts must generalize accounting bridges rather than hardcoding single-case formulas.
-3. **Deterministic verification exposed errors hidden by high aggregate scores**: In multiple runs, models achieved perfect internal reconciliation consistency while embedding severe financial defects ($>\$100\text{M}$ SBC omissions or inverted net cash signs).
+3. **Deterministic verification exposed errors hidden by high aggregate scores**: In multiple runs, models achieved perfect internal reconciliation consistency while embedding severe financial defects ($>\$100\text{M}$ SBC omissions or inverted net cash signs), showing within this benchmark that fluency and scalar scores can conceal critical domain failures.
 4. **One repair pass resolved 10/10 controlled target failures on both cases**: Targeted compiler diagnostics without gold leakage enabled frontier reasoning models to correct severe multi-step cascading errors.
-5. **Fully clean controlled repair achieved 95% overall**: 10/10 clean repairs on Northstar, 9/10 clean repairs on Meridian (14/15 propagating errors and 5/5 local errors cleanly resolved).
+5. **Targeted diagnostic feedback repaired 19 of 20 controlled fixtures to fully clean outputs, while resolving the target diagnostic in all 20** (10/10 clean on Northstar, 9/10 clean on Meridian; 14/15 propagating errors and 5/5 local errors cleanly resolved).
 
 > **Architectural Principle**: *Parsing validates representability; deterministic graders validate financial correctness.*
 
@@ -187,60 +225,51 @@ The case contains eight deliberate traps that test extraction accuracy:
 
 ## How to run the benchmark
 
-### Prerequisites
+### Prerequisites & Setup
 
 - Python 3.12+
 - `uv` ([install](https://docs.astral.sh/uv/getting-started/installation/))
-
-### Setup
 
 ```bash
 uv sync --all-groups
 ```
 
-### Grade the gold submission
+### Local Validation (No API Keys Required)
+
+Basic local validation runs quickly without API keys:
 
 ```bash
-uv run ib-eval grade examples/gold_submission
-```
-
-Expected output:
-```
-100 / 100
-```
-
-### Grade a custom submission
-
-```bash
-uv run ib-eval grade path/to/your/submission/
-```
-
-The submission directory must contain a `submission.json` conforming to
-the `Submission` schema defined in `src/ib_eval/schemas.py`.
-
-### Run tests
-
-```bash
+# 1. Run full test suite (212 automated tests)
 uv run pytest
-```
 
-### Lint and type-check
-
-```bash
+# 2. Lint and static type check
 uv run ruff check .
 uv run pyright
+
+# 3. Grade canonical Northstar gold submission (Expected: 100 / 100)
+uv run ib-eval grade examples/gold_submission
+
+# 4. Grade canonical Meridian gold submission (Expected: 100 / 100)
+uv run ib-eval grade examples/meridian_gold_submission
+
+# 5. Grade a corrupted fixture and inspect diagnostic output
+uv run ib-eval grade examples/corrupted/c03_cash_subtracted
+
+# 6. Run a simulated mock baseline trial
+uv run ib-eval baseline --case northstar-v1 --provider mock --runs 2 --execute
 ```
 
-### Regenerate gold submission
+### Grade All Corrupted Starting Fixtures
 
 ```bash
-uv run python cases/northstar-v1/ground_truth/generate_gold.py
-```
-
-### Run all corrupted fixtures
-
-```bash
+# Grade all 10 Northstar corrupted fixtures (c01–c10)
 for d in examples/corrupted/*/; do
+  echo "--- $d ---"
+  uv run ib-eval grade "$d" --quiet
+done
+
+# Grade all 10 Meridian corrupted fixtures (m01–m10)
+for d in examples/meridian_corrupted/*/; do
   echo "--- $d ---"
   uv run ib-eval grade "$d" --quiet
 done
@@ -250,30 +279,31 @@ done
 
 ## Repository structure
 
-```
+```text
 investment-banking-ai-eval/
 ├── pyproject.toml
-├── cases/northstar-v1/
-│   ├── case.yaml          # Case metadata
-│   ├── rubric.yaml        # Grader weights and tolerances
-│   ├── sources/           # Synthetic source documents (with traps)
-│   └── ground_truth/      # Gold submission generator
+├── cases/
+│   ├── northstar-v1/                 # Industrial manufacturing case (sources, rubric, gold)
+│   └── meridian-v1/                  # Enterprise SaaS case (sources, rubric, gold)
 ├── src/ib_eval/
-│   ├── cli.py             # CLI entry point
-│   ├── schemas.py         # Pydantic submission schema
-│   ├── dcf.py             # DCF engine (explicit formulas)
-│   ├── comps.py           # Trading comps engine
-│   ├── provenance.py      # Provenance helpers
-│   ├── case.py            # Case/rubric loader
-│   ├── scoring.py         # Aggregator
-│   └── graders/           # 10 deterministic graders
+│   ├── cli.py                        # CLI entry point (grade, baseline, repair-benchmark, compare)
+│   ├── schemas.py                    # Pydantic submission & provenance schemas
+│   ├── dcf.py                        # DCF engine (year-end & mid-year discounting)
+│   ├── comps.py                      # Trading comps engine (EBITDA & Revenue multiples)
+│   ├── provenance.py                 # Source classification & provenance verification
+│   ├── case.py                       # Case definition & rubric loader
+│   ├── scoring.py                    # Grader aggregator & report generator
+│   ├── baseline/                     # Direct & structured baseline runners
+│   ├── controlled_repair/            # Controlled repair benchmark engine
+│   └── graders/                      # 10 deterministic financial invariant graders
 ├── examples/
-│   ├── gold_submission/   # Perfect-score submission
-│   └── corrupted/         # One fixture per error class
-└── tests/                 # Comprehensive test suite
+│   ├── gold_submission/              # Perfect-score Northstar reference submission
+│   ├── meridian_gold_submission/     # Perfect-score Meridian reference submission
+│   ├── corrupted/                    # Northstar corrupted starting fixtures (c01–c10)
+│   └── meridian_corrupted/           # Meridian corrupted starting fixtures (m01–m10)
+├── results/                          # Tracked canonical experiment summaries & configs
+└── tests/                            # Comprehensive test suite (212 passing unit tests)
 ```
-
----
 
 ---
 
